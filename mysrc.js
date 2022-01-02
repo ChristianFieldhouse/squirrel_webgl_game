@@ -1,9 +1,19 @@
+
+'use strict';
+import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader.js';
+
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(2*18.4349488, window.innerWidth / window.innerHeight, 0.1, 1000 );
-
 const renderer = new THREE.WebGLRenderer();
+renderer.gammaOutput = true
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
+
+const squirrel_geom = new THREE.SphereGeometry(0.1);
+const smaterial = new THREE.MeshBasicMaterial( { color: 0xffa8a9 } );
+const squirrel = new THREE.Mesh( squirrel_geom, smaterial );
+squirrel.position.set(0, 0.1, 0);
+scene.add(squirrel)
 
 const box_size = 0.8;
 const image_path = 'https://media.istockphoto.com/photos/artificial-grass-picture-id506692747?b=1&k=20&m=506692747&s=170667a&w=0&h=x4QDWFznTnLQCEmsvCO4w0sZTDYmTvYvPwYD5DW9Ntg='
@@ -59,17 +69,41 @@ function createMaterialArray() {
   return materialArray;
 }
 
-skyboxGeo = new THREE.BoxGeometry(100, 100, 100);
-skybox = new THREE.Mesh(skyboxGeo, createMaterialArray());
+const skyboxGeo = new THREE.BoxGeometry(100, 100, 100);
+const skybox = new THREE.Mesh(skyboxGeo, createMaterialArray());
 scene.add(skybox);
 
+const loader = new GLTFLoader();
+function add_tree(x, y){
+	loader.load( 'objects/bad_tree.glb', function ( gltf ) {
+
+		gltf.scene.scale.set( 0.05, 0.05, 0.05 );
+		gltf.scene.rotation.y = Math.PI / 2;
+		gltf.scene.position.set(x, 0.2, y);
+		scene.add( gltf.scene );
+		console.log("added gltf");
+		console.log(gltf.scene)
+
+	}, undefined, function ( error ) {
+
+		console.error( error );
+
+	} );
+}
+
+var light = new THREE.HemisphereLight( 0xffffbb, 0x080820, 1 );
+scene.add( light );
+
 //add_cube(0, 0, colours["green"], 1);
-add_grass(0, 0, 1);
-add_grass(1, 0, 1);
-add_grass(-1, 0, 1);
-add_grass(0, 1, 1);
-add_grass(1, 1, 1);
-add_grass(-1, 1, 1)
+for(var i = -5; i < 5; ++i){
+  for(var j = 0; j < 20; ++j){
+    add_grass(i, j, 1);
+  }
+}
+
+for (var t = 0; t < 20; ++t){
+	add_tree(Math.floor(Math.random() * 10 - 5), Math.floor(Math.random() * 20));
+}
 
 camera.position.x = 0;
 camera.position.y = 0.4;
@@ -102,15 +136,19 @@ document.onkeydown = function(e) {
     switch (e.keyCode) {
       case 37:
       camera.position.x += 0.1;
+      squirrel.position.x += 0.1;
       break;
       case 38:
       camera.position.z += 0.1;
+      squirrel.position.z += 0.1;
       break;
       case 39:
       camera.position.x -= 0.1;
+      squirrel.position.x -= 0.1;
       break;
       case 40:
       camera.position.z -= 0.1;
+      squirrel.position.z -= 0.1;
       break;
     }
 };
