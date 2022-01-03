@@ -15,13 +15,14 @@ const squirrel_geom = new THREE.SphereGeometry(0.1);
 const smaterial = new THREE.MeshBasicMaterial( { color: 0xffa8a9 } );
 squirrel = new THREE.Mesh( squirrel_geom, smaterial );
 //scene.add( squirrel );
-squirrel.position.set(0, 0.5, 0);
+const squirrel_elevation = 0.25;
+squirrel.position.set(0, squirrel_elevation, 0);
 squirrel.name = "squirrel";
 
 loader.load( 'objects/bitchin_squirrel_boy.glb', function ( gltf ) {
 
 	gltf.scene.scale.set( 0.05, 0.05, 0.05 );
-	gltf.scene.position.set(0, 0.12, 0);
+	gltf.scene.position.set(0, squirrel_elevation, 0);
 	gltf.scene.name = "squirrel";
 	squirrel =  gltf.scene
 	scene.add(squirrel);
@@ -48,7 +49,7 @@ function add_cube(x, y, colour, box_size=0.8){
     const material = new THREE.MeshBasicMaterial( { color: colour } );
     const cube = new THREE.Mesh( geometry, material );
     cube.name = `tile_${x}_${y}`
-    cube.position.set(x, y, 0);
+    cube.position.set(x, 0, y);
     scene.add( cube );
 }
 
@@ -132,7 +133,7 @@ function add_nut(x, y){
 var light = new THREE.HemisphereLight( 0xffffbb, 0x080820, 1 );
 scene.add( light );
 
-//add_cube(0, 0, colours["green"], 1);
+//add_cube(0, 2, colours["green"], 2);
 for(var i = -5; i < 5; ++i){
   for(var j = 0; j < 20; ++j){
     //add_grass(i, j, 1);
@@ -141,11 +142,11 @@ for(var i = -5; i < 5; ++i){
 
 add_grass(0, 0, 500);
 
-for (var t = 0; t < 30; ++t){
+for (var t = 0; t < 0; ++t){
 	add_tree(Math.random() * 10 - 5, Math.random() * 20);
 }
 
-for (var t = 0; t < 30; ++t){
+for (var t = 0; t < 1; ++t){
 	add_nut(Math.random() * 10 - 5, Math.random() * 20);
 }
 
@@ -172,54 +173,127 @@ const line = new THREE.Line( line_geometry, line_material );
 
 var raycaster = new THREE.Raycaster();
 var intersects;
-var direction = new THREE.Vector3();
+function get_intersect(gaze){
+	raycaster.set(squirrel.position, gaze);
+	const intersects = raycaster.intersectObjects(scene.children, true);
+	if (intersects.length == 0){
+		return;
+	}
+	if (intersects[0].object.name == "Sphere"){
+		return intersects[1];
+	}
+	return intersects[0];
+}
 var squirrel_dir = new THREE.Vector3(0, 0, 1);
-var squirrel_left = new THREE.Vector3(1, 0, 0);
+var squirrel_left = new THREE.Vector3(-1, 0, 0);
 var squirrel_up = new THREE.Vector3(0, 1, 0);
 var squirrel_target = new THREE.Vector3(0, 0, 0);
 
+function calculate_down(){
+	const gaze_angles = 10;
+
+	var points = [];
+	var point_weights = 0;
+	
+	function weight(distance){
+		return 1/distance;
+	}
+	
+	for (var i = 0; i < gaze_angles; ++i){
+		for (var j = 0; j < gaze_angles; ++j){
+			const theta = 2 * Math.PI * i / gaze_angles;
+			const phi = Math.PI * j / gaze_angles;
+			//console.log(theta);
+			const gaze =  new THREE.Vector3(Math.cos(phi), Math.sin(phi)*Math.cos(theta), Math.sin(phi) * Math.sin(theta));
+			const intersect = get_intersect(gaze);
+			if (intersect && (intersect.distance < 1)){
+				points.push(intersect);
+				point_weights += weight(intersect.distance);
+			}
+		}
+	}
+	
+	var mean_point = new THREE.Vector3();
+	for (var i = 0; i < points.length; ++i){
+		mean_point.add(points[i].point.multiplyScalar(weight(points[i].distance) / point_weights));
+	}
+	return mean_point;
+}
+
+var indicatorf = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["pink"] } ) );
+var indicatorb = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["green"] } ) );
+var indicatorl = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["grey"] } ) );
+var indicatorr = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["purple"] } ) );
+//indicator.scale.set(0.1);
+scene.add(indicatorf);
+scene.add(indicatorb);
+scene.add(indicatorl);
+scene.add(indicatorr);
+
+var frame_no = 0;
 const animate = function () {
 	requestAnimationFrame( animate );
-
-	const gaze_fl = squirrel_dir.clone().sub(squirrel_up).add(squirrel_left);
-	const gaze_fr = squirrel_dir.clone().sub(squirrel_up).sub(squirrel_left);
-	const gaze_bl = squirrel_dir.clone().negate().sub(squirrel_up).add(squirrel_left);
-	const gaze_br = squirrel_dir.clone().negate().sub(squirrel_up).sub(squirrel_left);
-
-	raycaster.set(squirrel.position, gaze_fl);
-	intersects = raycaster.intersectObjects(scene.children, true);
-	console.log(intersects[0].object.name);
-
-	function get_intersect(gaze){
-		raycaster.set(squirrel.position, gaze);
-		const intersects = raycaster.intersectObjects(scene.children, true);
-		if (intersects[0].object.name == "Sphere"){
-			return intersects[1].point;
-		}
-		return intersects[0].point;
-	}
-	const target_fl = get_intersect(gaze_fl);
-	const target_fr = get_intersect(gaze_fr);
-	const target_bl = get_intersect(gaze_bl);
-	const target_br = get_intersect(gaze_br);
-
-	//console.log("----------------");
-	console.log(target_fl);
-	//console.log(target_fr);
-	//console.log(target_bl);
-	//console.log(target_br);
-	//console.log("----------");
-
-	squirrel_dir = target_fl.clone().lerp(target_fr, 0.5).sub(target_bl.clone().lerp(target_br, 0.5)).normalize();
-	squirrel_left = target_fl.clone().sub(target_fr).lerp(target_bl.clone().sub(target_br), 0.5).normalize();
-	squirrel_up = squirrel_dir.clone().cross(squirrel_left).normalize();
 	
-	console.log(squirrel_dir);
+	frame_no++;
+	if(frame_no % 100000000 == 0){
+		var mean_point = calculate_down();
+		squirrel_up = squirrel.position.clone().sub(mean_point).normalize();
+		squirrel_left = squirrel_up.clone().cross(squirrel_dir).normalize();
+		// resolve the direction to be perpendicular to the up vector
+		squirrel_dir = squirrel_left.clone().cross(squirrel_up);
+	}
+	else{
+		const gaze_f = squirrel_dir.clone().sub(squirrel_up);
+		const gaze_b = squirrel_dir.clone().negate().sub(squirrel_up);
+		const gaze_l = squirrel_left.clone().sub(squirrel_up);
+		const gaze_r = squirrel_left.clone().negate().sub(squirrel_up);
+		console.log("##");
+		console.log(squirrel_dir);
+		//console.log(squirrel_left);
+		//console.log(squirrel_up);
+		const target_f = get_intersect(gaze_f);
+		const target_b = get_intersect(gaze_b);
+		const target_l = get_intersect(gaze_l);
+		const target_r = get_intersect(gaze_r);
+		
+		indicatorf.position.x = target_f.point.x;
+		indicatorf.position.y = target_f.point.y;
+		indicatorf.position.z = target_f.point.z;
+		
+		indicatorb.position.x = target_b.point.x;
+		indicatorb.position.y = target_b.point.y;
+		indicatorb.position.z = target_b.point.z;
+		
+		indicatorl.position.x = target_l.point.x;
+		indicatorl.position.y = target_l.point.y;
+		indicatorl.position.z = target_l.point.z;
+		
+		indicatorr.position.x = target_r.point.x;
+		indicatorr.position.y = target_r.point.y;
+		indicatorr.position.z = target_r.point.z;
+		
+		
+		var target_f_point = target_f.point;
+		if (target_f.distance > 1){
+			target_f_point = squirrel.position.clone().add(gaze_f.clone().lerp(squirrel_up.clone().negate(), 0).multiplyScalar(squirrel_elevation * 1.41));
+		}
+		//console.log(target_f_point);
+		
+		squirrel_dir = target_f_point.clone().sub(target_b.point).normalize();
+		const left_right = target_l.point.clone().sub(target_r.point).normalize();
+		squirrel_up = squirrel_dir.clone().cross(left_right).normalize().negate();
+		squirrel_left = squirrel_up.clone().cross(squirrel_dir.clone()).normalize().negate();
+		const new_pos = target_b.point.clone().lerp(target_f_point, 0.5).add(squirrel_up.clone().multiplyScalar(squirrel_elevation));
+		//console.log(new_pos);
+		squirrel.position.set(new_pos.x, new_pos.y, new_pos.z);
+	}
+
 	squirrel.position.add(squirrel_dir.clone().multiplyScalar(0.1/60));
+	//squirrel.position.add(new THREE.Vector3(0, 0, 0.01));
 	const m = (new THREE.Matrix4()).makeBasis(
-		squirrel_left.negate().multiplyScalar(0.05),
-		squirrel_up.multiplyScalar(0.05),
-		squirrel_dir.multiplyScalar(0.05)
+		squirrel_left.clone().multiplyScalar(0.05),
+		squirrel_up.clone().multiplyScalar(0.05), //
+		squirrel_dir.clone().multiplyScalar(0.05) 
 	);
 	squirrel.matrix.set(...m.elements);
 	squirrel.matrix.setPosition( squirrel.position );
@@ -244,8 +318,8 @@ document.onkeydown = function(e) {
 	cam_direction.y = 0;
 	//console.log(cam_direction);
 	cam_direction.normalize();
-	const cam_orthogonal = new THREE.Vector3(0, 1, 0);
-	cam_orthogonal.cross(cam_direction);
+	const cam_orthogonal = new THREE.Vector3(-1, 0, 0);
+	//cam_orthogonal.cross(cam_direction);
 	const eps = 0.1;
     switch (e.keyCode) {
       case 37:
@@ -287,6 +361,8 @@ document.onkeydown = function(e) {
 	);
 	cam_direction.y = 0;
 	cam_direction.normalize();
+	
+	console.log(squirrel_dir);
 	
 	var angle = squirrel_dir.angleTo(new THREE.Vector3(0, 0, -1));
 	if (squirrel_dir.x > 0){
