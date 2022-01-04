@@ -15,7 +15,7 @@ const squirrel_geom = new THREE.SphereGeometry(0.1);
 const smaterial = new THREE.MeshBasicMaterial( { color: 0xffa8a9 } );
 squirrel = new THREE.Mesh( squirrel_geom, smaterial );
 //scene.add( squirrel );
-const squirrel_elevation = 0.25;
+const squirrel_elevation = 0.55;
 squirrel.position.set(0, squirrel_elevation, 0);
 squirrel.name = "squirrel";
 
@@ -220,6 +220,8 @@ function calculate_down(){
 	return mean_point;
 }
 
+var freefall = false;
+
 var indicatorf = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["pink"] } ) );
 var indicatorb = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["green"] } ) );
 var indicatorl = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["grey"] } ) );
@@ -243,7 +245,9 @@ const animate = function () {
 		squirrel_dir = squirrel_left.clone().cross(squirrel_up);
 	}
 	else{
+		const gaze_ff = squirrel_dir.clone();
 		const gaze_f = squirrel_dir.clone().sub(squirrel_up);
+		const gaze_d = squirrel_up.clone().negate()
 		const gaze_b = squirrel_dir.clone().negate().sub(squirrel_up);
 		const gaze_l = squirrel_left.clone().sub(squirrel_up);
 		const gaze_r = squirrel_left.clone().negate().sub(squirrel_up);
@@ -251,7 +255,9 @@ const animate = function () {
 		console.log(squirrel_dir);
 		//console.log(squirrel_left);
 		//console.log(squirrel_up);
+		const target_ff = get_intersect(gaze_ff);
 		const target_f = get_intersect(gaze_f);
+		const target_d = get_intersect(gaze_d);
 		const target_b = get_intersect(gaze_b);
 		const target_l = get_intersect(gaze_l);
 		const target_r = get_intersect(gaze_r);
@@ -273,27 +279,43 @@ const animate = function () {
 		indicatorr.position.z = target_r.point.z;
 		
 		
-		var target_f_point = target_f.point;
-		if (target_f.distance > 1){
-			target_f_point = squirrel.position.clone().add(gaze_f.clone().lerp(squirrel_up.clone().negate(), 0).multiplyScalar(squirrel_elevation * 1.41));
+		var target_f_point = target_d.point;
+		if (target_d.distance > squirrel_elevation * 2){
+			freefall = true;
+			squirrel_up = new THREE.Vector3(0, 1, 0);
+			squirrel_dir = new THREE.Vector3(0, 0, 1);
+			squirrel_left = new THREE.Vector3(-1, 0, 0);
+		}
+		if (target_f.distance < squirrel_elevation * 2){
+			target_f_point = target_f.point
+		}
+		if (target_ff.distance < squirrel_elevation * 2){
+			target_f_point = target_ff.point
 		}
 		//console.log(target_f_point);
 		
-		squirrel_dir = target_f_point.clone().sub(target_b.point).normalize();
-		const left_right = target_l.point.clone().sub(target_r.point).normalize();
-		squirrel_up = squirrel_dir.clone().cross(left_right).normalize().negate();
-		squirrel_left = squirrel_up.clone().cross(squirrel_dir.clone()).normalize().negate();
-		const new_pos = target_b.point.clone().lerp(target_f_point, 0.5).add(squirrel_up.clone().multiplyScalar(squirrel_elevation));
-		//console.log(new_pos);
-		squirrel.position.set(new_pos.x, new_pos.y, new_pos.z);
+		if (!freefall){
+			squirrel_dir = target_f_point.clone().sub(target_b.point).normalize();
+			const left_right = target_l.point.clone().sub(target_r.point).normalize();
+			squirrel_up = squirrel_dir.clone().cross(left_right).normalize().negate();
+			squirrel_left = squirrel_up.clone().cross(squirrel_dir.clone()).normalize().negate();
+			const new_pos = target_b.point.clone().lerp(target_f_point, 0.5).add(squirrel_up.clone().multiplyScalar(squirrel_elevation));
+			//console.log(new_pos);
+			//squirrel.position.set(new_pos.x, new_pos.y, new_pos.z);
+		}
 	}
 
-	squirrel.position.add(squirrel_dir.clone().multiplyScalar(0.1/60));
+	if (freefall){
+		//squirrel.position.add(squirrel_up.clone().multiplyScalar(-0.1/60));
+	}
+	else{
+		//squirrel.position.add(squirrel_dir.clone().multiplyScalar(0.1/60));
+	}
 	//squirrel.position.add(new THREE.Vector3(0, 0, 0.01));
 	const m = (new THREE.Matrix4()).makeBasis(
 		squirrel_left.clone().multiplyScalar(0.05),
 		squirrel_up.clone().multiplyScalar(0.05), //
-		squirrel_dir.clone().multiplyScalar(0.05) 
+		squirrel_dir.clone().multiplyScalar(-0.05) 
 	);
 	squirrel.matrix.set(...m.elements);
 	squirrel.matrix.setPosition( squirrel.position );
