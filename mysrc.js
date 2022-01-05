@@ -15,7 +15,7 @@ const squirrel_geom = new THREE.SphereGeometry(0.1);
 const smaterial = new THREE.MeshBasicMaterial( { color: 0xffa8a9 } );
 squirrel = new THREE.Mesh( squirrel_geom, smaterial );
 //scene.add( squirrel );
-const squirrel_elevation = 0.13;
+const squirrel_elevation = 0.07;
 squirrel.position.set(0, squirrel_elevation, 0);
 squirrel.name = "squirrel";
 
@@ -279,6 +279,7 @@ const animate = function () {
 		    indicatorr.position.y = target_r.point.y;
 		    indicatorr.position.z = target_r.point.z;
 		}
+		console.log(".l..............");
 		
 		var target_f_point = target_f.point;
 		var target_b_point = target_b.point;
@@ -319,8 +320,9 @@ const animate = function () {
 			squirrel_up = squirrel_dir.clone().cross(left_right.clone().negate()).normalize();
 			squirrel_left = squirrel_up.clone().cross(squirrel_dir.clone()).normalize().negate();
 			var new_pos = target_b.point.clone().lerp(target_f_point, 0.5).add(squirrel_up.clone().multiplyScalar(squirrel_elevation));
-			if (new_pos.distanceTo(squirrel.position) > squirrel_elevation/2){
+			if (new_pos.distanceTo(squirrel.position) > squirrel_elevation){
 			    new_pos = squirrel.position.clone();
+			    console.log("not going to new position");
 			}
 			squirrel.position.set(new_pos.x, new_pos.y, new_pos.z);
 		}
