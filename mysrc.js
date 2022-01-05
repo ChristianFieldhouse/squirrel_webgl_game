@@ -19,15 +19,28 @@ const squirrel_elevation = 0.07;
 squirrel.position.set(0, squirrel_elevation, 0);
 squirrel.name = "squirrel";
 
+var squirrel_pose = {
+    "tail": {
+        0 : 0,
+        1 : 0,
+        2 : 0,
+    }
+}
+
 loader.load( 'objects/bitchin_squirrel_boy.glb', function ( gltf ) {
 
 	gltf.scene.scale.set( 0.05, 0.05, 0.05 );
 	gltf.scene.position.set(0, squirrel_elevation, 0);
 	gltf.scene.name = "squirrel";
-	squirrel =  gltf.scene
+	squirrel =  gltf.scene;
+	
+	squirrel_pose["tail"][0] = squirrel.children[0].children[3].rotation.x;
+    squirrel_pose["tail"][1] = squirrel.children[0].children[3].children[0].rotation.x;
+    squirrel_pose["tail"][2] = squirrel.children[0].children[3].children[0].children[0].rotation.x;
+	
 	scene.add(squirrel);
 	console.log("added gltf");
-	//console.log(gltf.scene)
+	console.log(gltf)
 
 }, undefined, function ( error ) {
 
@@ -238,6 +251,13 @@ if (indicators){
     scene.add(indicatorr);
 }
 
+function set_tail(param){
+    //console.log(squirrel.children[0].children[3].rotation.x);
+    squirrel.children[0].children[3].rotation.x = param + squirrel_pose["tail"][0];
+    //squirrel.children[0].children[3].children[0].rotation.x = param - 0.68;	
+    //squirrel.children[0].children[3].children[0].children[0].rotation.x = param - 0.97;	
+}
+
 var frame_no = 0;
 const animate = function () {
 	requestAnimationFrame( animate );
@@ -279,7 +299,6 @@ const animate = function () {
 		    indicatorr.position.y = target_r.point.y;
 		    indicatorr.position.z = target_r.point.z;
 		}
-		console.log(".l..............");
 		
 		var target_f_point = target_f.point;
 		var target_b_point = target_b.point;
@@ -313,6 +332,8 @@ const animate = function () {
 	        freefall = false;
 	    }
 		//console.log(target_r);
+		
+		set_tail(Math.sin(frame_no * 0.1) * 0.5 + 0.3);
 		
 		if (!freefall){
 			squirrel_dir = target_f_point.clone().sub(target_b_point).normalize();
