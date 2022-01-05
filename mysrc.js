@@ -340,8 +340,6 @@ const animate = function () {
 	squirrel.matrix.set(...m.elements);
 	squirrel.matrix.setPosition( squirrel.position );
 	squirrel.matrixAutoUpdate = false;
-	//console.log(m);
-	console.log(squirrel.matrix);
 	
 	var cam_direction = squirrel.position.clone().sub(camera.position).normalize();
 	camera.position.x = squirrel.position.x - cam_direction.x * cam_distance;
