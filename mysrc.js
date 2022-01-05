@@ -15,7 +15,7 @@ const squirrel_geom = new THREE.SphereGeometry(0.1);
 const smaterial = new THREE.MeshBasicMaterial( { color: 0xffa8a9 } );
 squirrel = new THREE.Mesh( squirrel_geom, smaterial );
 //scene.add( squirrel );
-const squirrel_elevation = 0.55;
+const squirrel_elevation = 0.13;
 squirrel.position.set(0, squirrel_elevation, 0);
 squirrel.name = "squirrel";
 
@@ -96,10 +96,10 @@ const skyboxGeo = new THREE.BoxGeometry(100, 100, 100);
 const skybox = new THREE.Mesh(skyboxGeo, createMaterialArray());
 scene.add(skybox);
 
-function add_tree(x, y){
+function add_tree(x, y, scale=0.05){
 	loader.load( 'objects/basic_bitch_tree.glb', function ( gltf ) {
 
-		gltf.scene.scale.set( 0.05, 0.05, 0.05 );
+		gltf.scene.scale.set( scale, scale, scale );
 		gltf.scene.rotation.y = Math.PI * 2 * Math.random();
 		gltf.scene.position.set(x, 0.4, y);
 		scene.add( gltf.scene );
@@ -133,6 +133,7 @@ function add_nut(x, y){
 var light = new THREE.HemisphereLight( 0xffffbb, 0x080820, 1 );
 scene.add( light );
 
+add_tree(0, 2, 0.05 * 5);
 //add_cube(0, 2, colours["green"], 2);
 for(var i = -5; i < 5; ++i){
   for(var j = 0; j < 20; ++j){
@@ -142,7 +143,7 @@ for(var i = -5; i < 5; ++i){
 
 add_grass(0, 0, 500);
 
-for (var t = 0; t < 0; ++t){
+for (var t = 0; t < 5; ++t){
 	add_tree(Math.random() * 10 - 5, Math.random() * 20);
 }
 
@@ -179,10 +180,11 @@ function get_intersect(gaze){
 	if (intersects.length == 0){
 		return;
 	}
-	if (intersects[0].object.name == "Sphere"){
-		return intersects[1];
+	for (var i = 0; i < intersects.length; ++i){
+	    if (intersects[i].object.name != "Sphere"){
+		    return intersects[i];
+	    }
 	}
-	return intersects[0];
 }
 var squirrel_dir = new THREE.Vector3(0, 0, 1);
 var squirrel_left = new THREE.Vector3(-1, 0, 0);
@@ -222,15 +224,19 @@ function calculate_down(){
 
 var freefall = false;
 
-var indicatorf = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["pink"] } ) );
-var indicatorb = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["green"] } ) );
-var indicatorl = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["grey"] } ) );
-var indicatorr = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["purple"] } ) );
-//indicator.scale.set(0.1);
-scene.add(indicatorf);
-scene.add(indicatorb);
-scene.add(indicatorl);
-scene.add(indicatorr);
+const indicators = false;
+
+if (indicators){
+    var indicatorf = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["pink"] } ) );
+    var indicatorb = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["ligt_salmon"] } ) );
+    var indicatorl = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["grey"] } ) );
+    var indicatorr = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["purple"] } ) );
+    //indicator.scale.set(0.1);
+    scene.add(indicatorf);
+    scene.add(indicatorb);
+    scene.add(indicatorl);
+    scene.add(indicatorr);
+}
 
 var frame_no = 0;
 const animate = function () {
@@ -245,83 +251,96 @@ const animate = function () {
 		squirrel_dir = squirrel_left.clone().cross(squirrel_up);
 	}
 	else{
-		const gaze_ff = squirrel_dir.clone();
 		const gaze_f = squirrel_dir.clone().sub(squirrel_up);
-		const gaze_d = squirrel_up.clone().negate()
 		const gaze_b = squirrel_dir.clone().negate().sub(squirrel_up);
 		const gaze_l = squirrel_left.clone().sub(squirrel_up);
 		const gaze_r = squirrel_left.clone().negate().sub(squirrel_up);
-		console.log("##");
-		console.log(squirrel_dir);
-		//console.log(squirrel_left);
-		//console.log(squirrel_up);
-		const target_ff = get_intersect(gaze_ff);
+
 		const target_f = get_intersect(gaze_f);
-		const target_d = get_intersect(gaze_d);
 		const target_b = get_intersect(gaze_b);
 		const target_l = get_intersect(gaze_l);
 		const target_r = get_intersect(gaze_r);
 		
-		indicatorf.position.x = target_f.point.x;
-		indicatorf.position.y = target_f.point.y;
-		indicatorf.position.z = target_f.point.z;
+		if (indicators){
+		    indicatorf.position.x = target_f.point.x;
+		    indicatorf.position.y = target_f.point.y;
+		    indicatorf.position.z = target_f.point.z;
+		    
+		    indicatorb.position.x = target_b.point.x;
+		    indicatorb.position.y = target_b.point.y;
+		    indicatorb.position.z = target_b.point.z;
+		    
+		    indicatorl.position.x = target_l.point.x;
+		    indicatorl.position.y = target_l.point.y;
+		    indicatorl.position.z = target_l.point.z;
+		    
+		    indicatorr.position.x = target_r.point.x;
+		    indicatorr.position.y = target_r.point.y;
+		    indicatorr.position.z = target_r.point.z;
+		}
 		
-		indicatorb.position.x = target_b.point.x;
-		indicatorb.position.y = target_b.point.y;
-		indicatorb.position.z = target_b.point.z;
+		var target_f_point = target_f.point;
+		var target_b_point = target_b.point;
+		if (target_f.distance > squirrel_elevation * 2){
+            target_f_point = squirrel.position.clone().add(
+                squirrel_dir.clone().sub(
+                    squirrel_up.clone().multiplyScalar(1.05)
+                ).multiplyScalar(squirrel_elevation)
+            )
+		}
+		if (target_b.distance > squirrel_elevation * 2){
+            target_b_point = squirrel.position.clone().add(
+                squirrel_dir.clone().negate().sub(
+                    squirrel_up.clone().multiplyScalar(0.95)
+                ).multiplyScalar(squirrel_elevation)
+            )
+		}
 		
-		indicatorl.position.x = target_l.point.x;
-		indicatorl.position.y = target_l.point.y;
-		indicatorl.position.z = target_l.point.z;
-		
-		indicatorr.position.x = target_r.point.x;
-		indicatorr.position.y = target_r.point.y;
-		indicatorr.position.z = target_r.point.z;
-		
-		
-		var target_f_point = target_d.point;
-		if (target_d.distance > squirrel_elevation * 2){
-			freefall = true;
-			squirrel_up = new THREE.Vector3(0, 1, 0);
+		const freefall_limit = squirrel_elevation * 3;
+		if (((target_f.distance > freefall_limit) &&
+	        (target_b.distance > freefall_limit)) &&
+	        ((target_l.distance > freefall_limit) &&
+	        (target_r.distance > freefall_limit))
+	    ){
+	        squirrel_up = new THREE.Vector3(0, 1, 0);
 			squirrel_dir = new THREE.Vector3(0, 0, 1);
 			squirrel_left = new THREE.Vector3(-1, 0, 0);
-		}
-		if (target_f.distance < squirrel_elevation * 2){
-			target_f_point = target_f.point
-		}
-		if (target_ff.distance < squirrel_elevation * 2){
-			target_f_point = target_ff.point
-		}
-		//console.log(target_f_point);
+			console.log("IN FREEFALL");
+	        freefall = true;
+	    }else{
+	        freefall = false;
+	    }
+		//console.log(target_r);
 		
 		if (!freefall){
-			squirrel_dir = target_f_point.clone().sub(target_b.point).normalize();
+			squirrel_dir = target_f_point.clone().sub(target_b_point).normalize();
 			const left_right = target_l.point.clone().sub(target_r.point).normalize();
-			squirrel_up = squirrel_dir.clone().cross(left_right).normalize().negate();
+			squirrel_up = squirrel_dir.clone().cross(left_right.clone().negate()).normalize();
 			squirrel_left = squirrel_up.clone().cross(squirrel_dir.clone()).normalize().negate();
-			const new_pos = target_b.point.clone().lerp(target_f_point, 0.5).add(squirrel_up.clone().multiplyScalar(squirrel_elevation));
-			//console.log(new_pos);
-			//squirrel.position.set(new_pos.x, new_pos.y, new_pos.z);
+			var new_pos = target_b.point.clone().lerp(target_f_point, 0.5).add(squirrel_up.clone().multiplyScalar(squirrel_elevation));
+			if (new_pos.distanceTo(squirrel.position) > squirrel_elevation/2){
+			    new_pos = squirrel.position.clone();
+			}
+			squirrel.position.set(new_pos.x, new_pos.y, new_pos.z);
 		}
 	}
 
 	if (freefall){
-		//squirrel.position.add(squirrel_up.clone().multiplyScalar(-0.1/60));
+		squirrel.position.add(squirrel_up.clone().multiplyScalar(-1/60));
 	}
 	else{
-		//squirrel.position.add(squirrel_dir.clone().multiplyScalar(0.1/60));
+		squirrel.position.add(squirrel_dir.clone().multiplyScalar(0.5/60));
 	}
-	//squirrel.position.add(new THREE.Vector3(0, 0, 0.01));
 	const m = (new THREE.Matrix4()).makeBasis(
-		squirrel_left.clone().multiplyScalar(0.05),
+		squirrel_left.clone().multiplyScalar(-0.05),
 		squirrel_up.clone().multiplyScalar(0.05), //
-		squirrel_dir.clone().multiplyScalar(-0.05) 
-	);
+	    squirrel_dir.clone().multiplyScalar(-0.05) 
+	).transpose(); // ugh
 	squirrel.matrix.set(...m.elements);
 	squirrel.matrix.setPosition( squirrel.position );
 	squirrel.matrixAutoUpdate = false;
 	//console.log(m);
-	//console.log(squirrel.matrix);
+	console.log(squirrel.matrix);
 	
 	var cam_direction = squirrel.position.clone().sub(camera.position).normalize();
 	camera.position.x = squirrel.position.x - cam_direction.x * cam_distance;
@@ -332,6 +351,7 @@ const animate = function () {
 };
 
 document.onkeydown = function(e) {
+    console.log("KEYDOWN");
 	var cam_direction = new THREE.Vector3(
 		squirrel.position.x - camera.position.x,
 		squirrel.position.y - camera.position.y,
@@ -340,40 +360,53 @@ document.onkeydown = function(e) {
 	cam_direction.y = 0;
 	//console.log(cam_direction);
 	cam_direction.normalize();
-	const cam_orthogonal = new THREE.Vector3(-1, 0, 0);
-	//cam_orthogonal.cross(cam_direction);
+	const cam_orthogonal = new THREE.Vector3(0, 1, 0);
+	cam_orthogonal.cross(cam_direction);
 	const eps = 0.1;
+	const cameps = 0.1;
+	console.log(e.keyCode);
     switch (e.keyCode) {
-      case 37:
-	  squirrel_dir = new THREE.Vector3(
-		squirrel_dir.x + eps * cam_orthogonal.x,
-		squirrel_dir.y + eps * cam_orthogonal.y,
-		squirrel_dir.z + eps * cam_orthogonal.z
-	  ).normalize();
+      case 37: // right
+	      squirrel_dir = new THREE.Vector3(
+		    squirrel_dir.x + eps * cam_orthogonal.x,
+		    squirrel_dir.y + eps * cam_orthogonal.y,
+		    squirrel_dir.z + eps * cam_orthogonal.z
+	      ).normalize();
       break;
       case 38:
-	  squirrel_dir = new THREE.Vector3(
-		squirrel_dir.x + eps * cam_direction.x,
-		squirrel_dir.y + eps * cam_direction.y,
-		squirrel_dir.z + eps * cam_direction.z
-	  ).normalize();
+	      squirrel_dir = new THREE.Vector3(
+		    squirrel_dir.x + eps * cam_direction.x,
+		    squirrel_dir.y + eps * cam_direction.y,
+		    squirrel_dir.z + eps * cam_direction.z
+	      ).normalize();
       break;
-	  case 39:
-	  squirrel_dir = new THREE.Vector3(
-		squirrel_dir.x - eps * cam_orthogonal.x,
-		squirrel_dir.y - eps * cam_orthogonal.y,
-		squirrel_dir.z - eps * cam_orthogonal.z
-	  ).normalize();
+	  case 39: // left
+	      squirrel_dir = new THREE.Vector3(
+		    squirrel_dir.x - eps * cam_orthogonal.x,
+		    squirrel_dir.y - eps * cam_orthogonal.y,
+		    squirrel_dir.z - eps * cam_orthogonal.z
+	      ).normalize();
       break;
 	  case 40:
-	  squirrel_dir = new THREE.Vector3(
-		squirrel_dir.x - eps * cam_direction.x,
-		squirrel_dir.y - eps * cam_direction.y,
-		squirrel_dir.z - eps * cam_direction.z
-	  ).normalize();
+	      squirrel_dir = new THREE.Vector3(
+		    squirrel_dir.x - eps * cam_direction.x,
+		    squirrel_dir.y - eps * cam_direction.y,
+		    squirrel_dir.z - eps * cam_direction.z
+	      ).normalize();
       break;
 	  case 32: //  space
 	  squirrel.position.y = squirrel.position.y + 1;
+      break;
+      case 65: // a key, camera left
+          console.log("camera left");
+	      camera.position.x += cameps * cam_orthogonal.x;
+	      camera.position.y += cameps * cam_orthogonal.y;
+	      camera.position.z += cameps * cam_orthogonal.z;
+      break;
+      case 68: // d key, camera right
+	      camera.position.x -= cameps * cam_orthogonal.x;
+	      camera.position.y -= cameps * cam_orthogonal.y;
+	      camera.position.z -= cameps * cam_orthogonal.z;
       break;
     }
     var cam_direction = new THREE.Vector3(
@@ -395,22 +428,6 @@ document.onkeydown = function(e) {
 };
 
 function onDocumentMouseWheel( event ) {
-
-    var fovMAX = 160;
-    var fovMIN = 1;
-    
-    var mx = 2 * (event.clientX / window.innerWidth - 0.5);
-    var my = 2 * (event.clientY / window.innerHeight - 0.5);
-    
-    var new_z = Math.pow(Math.sqrt(camera.position.z) + event.wheelDeltaY * 0.005, 2);
-    var z_diff = camera.position.z - new_z;
-    camera.position.z = new_z;
-    camera.position.x += mx * Math.tan(Math.PI/180 * camera.fov/2) * z_diff * camera.aspect;
-    camera.position.y -= my * Math.tan(Math.PI/180 *camera.fov/2) * z_diff;
-
-    //camera.fov -= event.wheelDeltaY * 0.05;
-    //camera.fov = Math.max( Math.min( camera.fov, fovMAX ), fovMIN );
-    //camera.projectionMatrix = new THREE.Matrix4().makePerspective(camera.fov, window.innerWidth / window.innerHeight, camera.near, camera.far);
 
 }
 
