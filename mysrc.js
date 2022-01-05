@@ -254,8 +254,15 @@ if (indicators){
 function set_tail(param){
     //console.log(squirrel.children[0].children[3].rotation.x);
     squirrel.children[0].children[3].rotation.x = param + squirrel_pose["tail"][0];
-    //squirrel.children[0].children[3].children[0].rotation.x = param - 0.68;	
-    //squirrel.children[0].children[3].children[0].children[0].rotation.x = param - 0.97;	
+    squirrel.children[0].children[3].children[0].rotation.x = param + squirrel_pose["tail"][1];	
+    squirrel.children[0].children[3].children[0].children[0].rotation.x = param + squirrel_pose["tail"][2];
+}
+
+function front_left_foot(param){
+    //console.log(squirrel.children[0].children[3].rotation.x);
+    squirrel.children[0].children[3].rotation.x = param + squirrel_pose["tail"][0];
+    squirrel.children[0].children[3].children[0].rotation.x = param + squirrel_pose["tail"][1];	
+    squirrel.children[0].children[3].children[0].children[0].rotation.x = param + squirrel_pose["tail"][2];
 }
 
 var frame_no = 0;
