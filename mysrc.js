@@ -137,11 +137,11 @@ add_tree(0, 2, 0.05 * 5);
 //add_cube(0, 2, colours["green"], 2);
 for(var i = -5; i < 5; ++i){
   for(var j = 0; j < 20; ++j){
-    //add_grass(i, j, 1);
+    add_grass(i, j, 1);
   }
 }
 
-add_grass(0, 0, 500);
+//add_grass(0, 0, 500);
 
 for (var t = 0; t < 5; ++t){
 	add_tree(Math.random() * 10 - 5, Math.random() * 20);
@@ -253,8 +253,9 @@ const animate = function () {
 	else{
 		const gaze_f = squirrel_dir.clone().sub(squirrel_up);
 		const gaze_b = squirrel_dir.clone().negate().sub(squirrel_up);
-		const gaze_l = squirrel_left.clone().sub(squirrel_up);
-		const gaze_r = squirrel_left.clone().negate().sub(squirrel_up);
+		const width = 0.5;
+		const gaze_l = squirrel_left.clone().multiplyScalar(width).sub(squirrel_up);
+		const gaze_r = squirrel_left.clone().multiplyScalar(-width).sub(squirrel_up);
 
 		const target_f = get_intersect(gaze_f);
 		const target_b = get_intersect(gaze_b);
