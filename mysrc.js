@@ -134,7 +134,8 @@ loader.load( 'objects/bitchin_squirrel_boy.glb', function ( gltf ) {
 
 const box_size = 0.8;
 //const image_path = 'https://media.istockphoto.com/photos/artificial-grass-picture-id506692747?b=1&k=20&m=506692747&s=170667a&w=0&h=x4QDWFznTnLQCEmsvCO4w0sZTDYmTvYvPwYD5DW9Ntg=';
-const image_path = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR9v26GSqQeESWVRH4iSgq33ZdbQVfofq0p-A&usqp=CAU';
+//const image_path = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR9v26GSqQeESWVRH4iSgq33ZdbQVfofq0p-A&usqp=CAU';
+const image_path = "grass.jpg"
 const grass_texture = new THREE.TextureLoader().load( image_path );
 // immediately use the texture for material creation
 const grass_material = new THREE.MeshBasicMaterial( { map: grass_texture } );
