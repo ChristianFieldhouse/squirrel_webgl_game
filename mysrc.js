@@ -1,7 +1,8 @@
 
-'use strict';
-import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader.js';
-const loader = new GLTFLoader();
+//'use strict';
+//import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader.js';
+const loader = new THREE.GLTFLoader();
+
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(2*18.4349488, window.innerWidth / window.innerHeight, 0.5, 1000 );
@@ -607,3 +608,4 @@ function onDocumentMouseWheel( event ) {
 document.addEventListener( 'mousewheel', onDocumentMouseWheel, false );
 
 animate();
+
