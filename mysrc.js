@@ -24,7 +24,69 @@ var squirrel_pose = {
         0 : 0,
         1 : 0,
         2 : 0,
+    },
+    "head": {
+        0: 0,
+        1: 0,
+    },
+    "front_left": {
+        0: 0,
+        1: 0,
+        2: 0,
+    },
+    "front_right": {
+        0: 0,
+        1: 0,
+        2: 0,
+    },
+    "back_left": {
+        0: 0,
+        1: 0,
+    },
+    "back_right": {
+        0: 0,
+        1: 0,
+    },
+}
+
+var squirrel_bones = {
+    "tail": {
+        0 : [0, 3],
+        1 : [0, 3, 0],
+        2 : [0, 3, 0, 0],
+    },
+    "head": {
+        0: [0, 2, 0, 0, 0, 0],
+        1: [0, 2, 0, 0, 0, 0, 0],
+    },
+    "front_left": {
+        0: [0, 2, 0, 0, 0, 1],
+        1: [0, 2, 0, 0, 0, 1, 0],
+        2: [0, 2, 0, 0, 0, 1, 0, 0],
+    },
+    "front_right": {
+        0: [0, 2, 0, 0, 0, 2],
+        1: [0, 2, 0, 0, 0, 2, 0],
+        2: [0, 2, 0, 0, 0, 2, 0, 0],
+    },
+    "back_left": {
+        0: [0, 2, 0, 1],
+        1: [0, 2, 0, 1, 0],
+        2: [0, 2, 0, 1, 0, 0],
+    },
+    "back_right": {
+        0: [0, 2, 0, 2],
+        1: [0, 2, 0, 2, 0],
+        2: [0, 2, 0, 2, 0, 0],
+    },
+}
+
+function bone(arr){
+    var r = squirrel;
+    for (var i = 0; i < arr.length; ++i){
+        r = r.children[arr[i]];
     }
+    return r;
 }
 
 loader.load( 'objects/bitchin_squirrel_boy.glb', function ( gltf ) {
@@ -34,13 +96,32 @@ loader.load( 'objects/bitchin_squirrel_boy.glb', function ( gltf ) {
 	gltf.scene.name = "squirrel";
 	squirrel =  gltf.scene;
 	
-	squirrel_pose["tail"][0] = squirrel.children[0].children[3].rotation.x;
-    squirrel_pose["tail"][1] = squirrel.children[0].children[3].children[0].rotation.x;
-    squirrel_pose["tail"][2] = squirrel.children[0].children[3].children[0].children[0].rotation.x;
-	
+	squirrel_pose["tail"][0] = bone(squirrel_bones["tail"][0]).rotation.x;
+    squirrel_pose["tail"][1] = bone(squirrel_bones["tail"][1]).rotation.x;
+    squirrel_pose["tail"][2] = bone(squirrel_bones["tail"][2]).rotation.x;
+    
+    squirrel_pose["front_left"][0] = bone(squirrel_bones["front_left"][0]).rotation.x;
+    squirrel_pose["front_left"][1] = bone(squirrel_bones["front_left"][1]).rotation.x;
+    squirrel_pose["front_left"][2] = bone(squirrel_bones["front_left"][2]).rotation.x;
+    
+    squirrel_pose["front_right"][0] = bone(squirrel_bones["front_right"][0]).rotation.x;
+    squirrel_pose["front_right"][1] = bone(squirrel_bones["front_right"][1]).rotation.x;
+    squirrel_pose["front_right"][2] = bone(squirrel_bones["front_right"][2]).rotation.x;
+    
+    squirrel_pose["back_left"][0] = bone(squirrel_bones["back_left"][0]).rotation.x;
+    squirrel_pose["back_left"][1] = bone(squirrel_bones["back_left"][1]).rotation.x;
+    squirrel_pose["back_left"][2] = bone(squirrel_bones["back_left"][2]).rotation.x;
+    
+    squirrel_pose["back_right"][0] = bone(squirrel_bones["back_right"][0]).rotation.x;
+    squirrel_pose["back_right"][1] = bone(squirrel_bones["back_right"][1]).rotation.x;
+    squirrel_pose["back_right"][2] = bone(squirrel_bones["back_right"][2]).rotation.x;
+    
+    squirrel_pose["head"][0] = bone(squirrel_bones["head"][0]).rotation.x;
+    squirrel_pose["head"][1] = bone(squirrel_bones["head"][1]).rotation.x;
+
 	scene.add(squirrel);
 	console.log("added gltf");
-	console.log(gltf)
+	console.log(gltf);
 
 }, undefined, function ( error ) {
 
@@ -146,7 +227,7 @@ function add_nut(x, y){
 var light = new THREE.HemisphereLight( 0xffffbb, 0x080820, 1 );
 scene.add( light );
 
-add_tree(0, 2, 0.05 * 5);
+//add_tree(0, 2, 0.05 * 5);
 //add_cube(0, 2, colours["green"], 2);
 for(var i = -5; i < 5; ++i){
   for(var j = 0; j < 20; ++j){
@@ -156,11 +237,11 @@ for(var i = -5; i < 5; ++i){
 
 //add_grass(0, 0, 500);
 
-for (var t = 0; t < 5; ++t){
+for (var t = 0; t < 40; ++t){
 	add_tree(Math.random() * 10 - 5, Math.random() * 20);
 }
 
-for (var t = 0; t < 1; ++t){
+for (var t = 0; t < 30; ++t){
 	add_nut(Math.random() * 10 - 5, Math.random() * 20);
 }
 
@@ -251,20 +332,48 @@ if (indicators){
     scene.add(indicatorr);
 }
 
-function set_tail(param){
+function set_tail(t0, t1, t2){
     //console.log(squirrel.children[0].children[3].rotation.x);
-    squirrel.children[0].children[3].rotation.x = param + squirrel_pose["tail"][0];
-    squirrel.children[0].children[3].children[0].rotation.x = param + squirrel_pose["tail"][1];	
-    squirrel.children[0].children[3].children[0].children[0].rotation.x = param + squirrel_pose["tail"][2];
+    squirrel.children[0].children[3].rotation.x = t0 + squirrel_pose["tail"][0];
+    squirrel.children[0].children[3].children[0].rotation.x = t1 + squirrel_pose["tail"][1];	
+    squirrel.children[0].children[3].children[0].children[0].rotation.x = t2 + squirrel_pose["tail"][2];
 }
 
-function front_left_foot(param){
-    //console.log(squirrel.children[0].children[3].rotation.x);
-    squirrel.children[0].children[3].rotation.x = param + squirrel_pose["tail"][0];
-    squirrel.children[0].children[3].children[0].rotation.x = param + squirrel_pose["tail"][1];	
-    squirrel.children[0].children[3].children[0].children[0].rotation.x = param + squirrel_pose["tail"][2];
+function set_front_left(t0, t1, t2){
+   //console.log(bone(squirrel_bones["front_left"][0]));
+   bone(squirrel_bones["front_left"][0]).rotation.x = t0; // + squirrel_pose["front_left"][0];
+   bone(squirrel_bones["front_left"][1]).rotation.x = t1; // + squirrel_pose["front_left"][1];
+   bone(squirrel_bones["front_left"][2]).rotation.x = t2; // + squirrel_pose["front_left"][2];
 }
 
+function set_front_right(t0, t1, t2){
+   //console.log(bone(squirrel_bones["front_left"][0]));
+   bone(squirrel_bones["front_right"][0]).rotation.x = t0; // + squirrel_pose["front_left"][0];
+   bone(squirrel_bones["front_right"][1]).rotation.x = t1; // + squirrel_pose["front_left"][1];
+   bone(squirrel_bones["front_right"][2]).rotation.x = t2; // + squirrel_pose["front_left"][2];
+}
+
+function set_back_right(t0, t1, t2){
+   //console.log(bone(squirrel_bones["front_left"][0]));
+   bone(squirrel_bones["back_right"][0]).rotation.x = t0 + squirrel_pose["back_right"][0];
+   bone(squirrel_bones["back_right"][1]).rotation.x = t1 + squirrel_pose["back_right"][1];
+   bone(squirrel_bones["back_right"][2]).rotation.x = t2 + squirrel_pose["back_right"][2];
+}
+
+function set_back_left(t0, t1, t2){
+   //console.log(bone(squirrel_bones["front_left"][0]));
+   bone(squirrel_bones["back_left"][0]).rotation.x = t0 + squirrel_pose["back_left"][0];
+   bone(squirrel_bones["back_left"][1]).rotation.x = t1 + squirrel_pose["back_left"][1];
+   bone(squirrel_bones["back_left"][2]).rotation.x = t2 + squirrel_pose["back_left"][2];
+}
+
+function set_head(t0, t1){
+   //console.log(bone(squirrel_bones["front_left"][0]));
+   bone(squirrel_bones["head"][0]).rotation.x = t0 + squirrel_pose["head"][0];
+   bone(squirrel_bones["head"][1]).rotation.x = t1 + squirrel_pose["head"][1];
+}
+
+const pace = 0.15;
 var frame_no = 0;
 const animate = function () {
 	requestAnimationFrame( animate );
@@ -340,7 +449,42 @@ const animate = function () {
 	    }
 		//console.log(target_r);
 		
-		set_tail(Math.sin(frame_no * 0.1) * 0.5 + 0.3);
+		set_head(
+			0, //Math.sin(frame_no * 0.1) * 0.4,
+		    -Math.sin(frame_no * pace) * 0.2
+		)
+		
+		set_tail(
+		    Math.sin(frame_no * pace) * 0.5 + 0.3,
+		    Math.sin(frame_no * pace) * 0.5 + 0.3,
+		    Math.sin(frame_no * pace) * 0.5 - 0.3,
+		
+		);
+		
+		set_front_left(
+		    -Math.PI/2 + Math.PI/4 * Math.sin(frame_no * pace),
+		    0,
+		    0
+		);
+		
+		set_front_right(
+		    -Math.PI/16 - Math.PI/4 + Math.PI/4 * Math.sin(Math.PI + frame_no * pace),
+		    0, //Math.PI/10, // - Math.PI/4 + Math.PI/4 * Math.sin(frame_no * 0.1),
+		    0
+		);
+		
+		set_back_left(
+		    -Math.PI/8 * Math.sin(frame_no * pace),
+		    Math.PI/8 * Math.sin(frame_no * pace),
+		    -Math.PI/4 - Math.PI/6 * Math.sin(frame_no * pace),
+		);
+		
+		set_back_right(
+		    -Math.PI/8 * Math.sin(Math.PI + frame_no * pace),
+		    -Math.PI/8 + Math.PI/8 * Math.sin(Math.PI + frame_no * pace),
+		    Math.PI/4 + Math.PI/6 * Math.sin(Math.PI + frame_no * pace),
+		);
+		
 		
 		if (!freefall){
 			squirrel_dir = target_f_point.clone().sub(target_b_point).normalize();
@@ -360,7 +504,7 @@ const animate = function () {
 		squirrel.position.add(squirrel_up.clone().multiplyScalar(-1/60));
 	}
 	else{
-		squirrel.position.add(squirrel_dir.clone().multiplyScalar(0.5/60));
+		squirrel.position.add(squirrel_dir.clone().multiplyScalar(pace*3/60));
 	}
 	const m = (new THREE.Matrix4()).makeBasis(
 		squirrel_left.clone().multiplyScalar(-0.05),
