@@ -197,7 +197,7 @@ function add_tree(x, y, scale=0.05){
 
 		gltf.scene.scale.set( scale, scale, scale );
 		gltf.scene.rotation.y = Math.PI * 2 * Math.random();
-		gltf.scene.position.set(x, 0.4, y);
+		gltf.scene.position.set(x, 0.2, y);
 		scene.add( gltf.scene );
 		//console.log("added gltf");
 		//console.log(gltf.scene)
@@ -240,7 +240,7 @@ for(var i = -5; i < 5; ++i){
 //add_grass(0, 0, 500);
 
 for (var t = 0; t < 40; ++t){
-	add_tree(Math.random() * 10 - 5, Math.random() * 20);
+	add_tree(Math.random() * 10 - 5, Math.random() * 20, 0.05);
 }
 
 for (var t = 0; t < 30; ++t){
@@ -287,38 +287,11 @@ var squirrel_left = new THREE.Vector3(-1, 0, 0);
 var squirrel_up = new THREE.Vector3(0, 1, 0);
 var squirrel_target = new THREE.Vector3(0, 0, 0);
 
-function calculate_down(){
-	const gaze_angles = 10;
-
-	var points = [];
-	var point_weights = 0;
-	
-	function weight(distance){
-		return 1/distance;
-	}
-	
-	for (var i = 0; i < gaze_angles; ++i){
-		for (var j = 0; j < gaze_angles; ++j){
-			const theta = 2 * Math.PI * i / gaze_angles;
-			const phi = Math.PI * j / gaze_angles;
-			//console.log(theta);
-			const gaze =  new THREE.Vector3(Math.cos(phi), Math.sin(phi)*Math.cos(theta), Math.sin(phi) * Math.sin(theta));
-			const intersect = get_intersect(gaze);
-			if (intersect && (intersect.distance < 1)){
-				points.push(intersect);
-				point_weights += weight(intersect.distance);
-			}
-		}
-	}
-	
-	var mean_point = new THREE.Vector3();
-	for (var i = 0; i < points.length; ++i){
-		mean_point.add(points[i].point.multiplyScalar(weight(points[i].distance) / point_weights));
-	}
-	return mean_point;
+var state = {
+    "action": "walking",
+    "time": 0,
+    "velocity": new THREE.Vector3(0, 0, 0),
 }
-
-var freefall = false;
 
 const indicators = false;
 
@@ -375,145 +348,201 @@ function set_head(t0, t1){
    bone(squirrel_bones["head"][1]).rotation.x = t1 + squirrel_pose["head"][1];
 }
 
-const pace = 0.15;
+function set_walking_pose(param){
+	set_head(
+		0, //Math.sin(frame_no * 0.1) * 0.4,
+	    -Math.sin(param) * 0.2
+	)
+	set_tail(
+	    Math.sin(param) * 0.5 + 0.3,
+	    Math.sin(param) * 0.5 + 0.3,
+	    Math.sin(param) * 0.5 - 0.3,
+	
+	);
+	set_front_left(
+	    -Math.PI/2 + Math.PI/4 * Math.sin(param),
+	    0,
+	    0
+	);
+	set_front_right(
+	    -Math.PI/16 - Math.PI/4 + Math.PI/4 * Math.sin(Math.PI + param),
+	    0, //Math.PI/10, // - Math.PI/4 + Math.PI/4 * Math.sin(frame_no * 0.1),
+	    0
+	);
+	set_back_left(
+	    -Math.PI/8 * Math.sin(param),
+	    Math.PI/8 * Math.sin(param),
+	    -Math.PI/4 - Math.PI/6 * Math.sin(param),
+	);
+	set_back_right(
+	    -Math.PI/8 * Math.sin(Math.PI + param),
+	    -Math.PI/8 + Math.PI/8 * Math.sin(Math.PI + param),
+	    Math.PI/4 + Math.PI/6 * Math.sin(Math.PI + param),
+	);
+}
+
+function set_jumping_pose(){
+    var param = state["time"] * 0.5;
+    var front_param = Math.min(param, Math.PI * 2);
+    var back_param = Math.min(param, Math.PI);
+	set_head(
+		0, //Math.sin(frame_no * 0.1) * 0.4,
+	    -Math.sin(param) * 0.2
+	)
+	set_tail(
+	    Math.sin(param) * 0.5 + 0.3,
+	    Math.sin(param) * 0.5 + 0.3,
+	    Math.sin(param) * 0.5 - 0.3,
+	
+	);
+	set_front_left(
+	    -Math.PI/2 + Math.PI/4 * Math.sin(Math.PI/2 + front_param),
+	    0,
+	    0
+	);
+	set_front_right(
+	    -Math.PI/16 - Math.PI/4 + Math.PI/4 * Math.sin(Math.PI/2 + front_param),
+	    0, //Math.PI/10, // - Math.PI/4 + Math.PI/4 * Math.sin(frame_no * 0.1),
+	    0
+	);
+	set_back_left(
+	    -Math.PI/8 * Math.sin(-Math.PI/2+ back_param),
+	    Math.PI/8 * Math.sin(-Math.PI/2+ back_param),
+	    -Math.PI/4 - Math.PI/6 * Math.sin(-Math.PI/2+ back_param),
+	);
+	set_back_right(
+	    -Math.PI/8 * Math.sin(-Math.PI/2+ back_param),
+	    -Math.PI/8 + Math.PI/8 * Math.sin(-Math.PI/2+ back_param),
+	    Math.PI/4 + Math.PI/6 * Math.sin(-Math.PI/2+ back_param),
+	);
+}
+
+function gripping(){
+    return (state["action"] == "walking")
+}
+
+const pace = 0.3;
 var frame_no = 0;
 const animate = function () {
 	requestAnimationFrame( animate );
 	
 	frame_no++;
-	if(frame_no % 100000000 == 0){
-		var mean_point = calculate_down();
-		squirrel_up = squirrel.position.clone().sub(mean_point).normalize();
-		squirrel_left = squirrel_up.clone().cross(squirrel_dir).normalize();
-		// resolve the direction to be perpendicular to the up vector
-		squirrel_dir = squirrel_left.clone().cross(squirrel_up);
-	}
-	else{
-		const gaze_f = squirrel_dir.clone().sub(squirrel_up);
-		const gaze_b = squirrel_dir.clone().negate().sub(squirrel_up);
-		const width = 0.5;
-		const gaze_l = squirrel_left.clone().multiplyScalar(width).sub(squirrel_up);
-		const gaze_r = squirrel_left.clone().multiplyScalar(-width).sub(squirrel_up);
+	const gaze_f = squirrel_dir.clone().sub(squirrel_up);
+	const gaze_b = squirrel_dir.clone().negate().sub(squirrel_up);
+	const width = 0.15;
+	const gaze_l = squirrel_left.clone().multiplyScalar(width).sub(squirrel_up);
+	const gaze_r = squirrel_left.clone().multiplyScalar(-width).sub(squirrel_up);
 
-		const target_f = get_intersect(gaze_f);
-		const target_b = get_intersect(gaze_b);
-		const target_l = get_intersect(gaze_l);
-		const target_r = get_intersect(gaze_r);
-		
-		if (indicators){
-		    indicatorf.position.x = target_f.point.x;
-		    indicatorf.position.y = target_f.point.y;
-		    indicatorf.position.z = target_f.point.z;
-		    
-		    indicatorb.position.x = target_b.point.x;
-		    indicatorb.position.y = target_b.point.y;
-		    indicatorb.position.z = target_b.point.z;
-		    
-		    indicatorl.position.x = target_l.point.x;
-		    indicatorl.position.y = target_l.point.y;
-		    indicatorl.position.z = target_l.point.z;
-		    
-		    indicatorr.position.x = target_r.point.x;
-		    indicatorr.position.y = target_r.point.y;
-		    indicatorr.position.z = target_r.point.z;
-		}
-		
-		var target_f_point = target_f.point;
-		var target_b_point = target_b.point;
-		if (target_f.distance > squirrel_elevation * 2){
+	const target_f = get_intersect(gaze_f);
+	const target_b = get_intersect(gaze_b);
+	const target_l = get_intersect(gaze_l);
+	const target_r = get_intersect(gaze_r);
+	
+	if (indicators){
+	    indicatorf.position.x = target_f.point.x;
+	    indicatorf.position.y = target_f.point.y;
+	    indicatorf.position.z = target_f.point.z;
+	    
+	    indicatorb.position.x = target_b.point.x;
+	    indicatorb.position.y = target_b.point.y;
+	    indicatorb.position.z = target_b.point.z;
+	    
+	    indicatorl.position.x = target_l.point.x;
+	    indicatorl.position.y = target_l.point.y;
+	    indicatorl.position.z = target_l.point.z;
+	    
+	    indicatorr.position.x = target_r.point.x;
+	    indicatorr.position.y = target_r.point.y;
+	    indicatorr.position.z = target_r.point.z;
+	}
+	
+	var target_f_point = target_f.point;
+	var target_b_point = target_b.point;
+	if (gripping()){
+	    if (target_f.distance > squirrel_elevation * 2){
             target_f_point = squirrel.position.clone().add(
                 squirrel_dir.clone().sub(
                     squirrel_up.clone().multiplyScalar(1.05)
                 ).multiplyScalar(squirrel_elevation)
             )
-		}
-		if (target_b.distance > squirrel_elevation * 2){
+	    }
+	    if (target_b.distance > squirrel_elevation * 2){
             target_b_point = squirrel.position.clone().add(
                 squirrel_dir.clone().negate().sub(
                     squirrel_up.clone().multiplyScalar(0.95)
                 ).multiplyScalar(squirrel_elevation)
             )
-		}
-		
-		const freefall_limit = squirrel_elevation * 3;
-		if (((target_f.distance > freefall_limit) &&
-	        (target_b.distance > freefall_limit)) &&
-	        ((target_l.distance > freefall_limit) &&
-	        (target_r.distance > freefall_limit))
-	    ){
-	        squirrel_up = new THREE.Vector3(0, 1, 0);
-			squirrel_dir = new THREE.Vector3(0, 0, 1);
-			squirrel_left = new THREE.Vector3(-1, 0, 0);
-			console.log("IN FREEFALL");
-	        freefall = true;
-	    }else{
-	        freefall = false;
 	    }
-		//console.log(target_r);
-		
-		set_head(
-			0, //Math.sin(frame_no * 0.1) * 0.4,
-		    -Math.sin(frame_no * pace) * 0.2
-		)
-		
-		set_tail(
-		    Math.sin(frame_no * pace) * 0.5 + 0.3,
-		    Math.sin(frame_no * pace) * 0.5 + 0.3,
-		    Math.sin(frame_no * pace) * 0.5 - 0.3,
-		
-		);
-		
-		set_front_left(
-		    -Math.PI/2 + Math.PI/4 * Math.sin(frame_no * pace),
-		    0,
-		    0
-		);
-		
-		set_front_right(
-		    -Math.PI/16 - Math.PI/4 + Math.PI/4 * Math.sin(Math.PI + frame_no * pace),
-		    0, //Math.PI/10, // - Math.PI/4 + Math.PI/4 * Math.sin(frame_no * 0.1),
-		    0
-		);
-		
-		set_back_left(
-		    -Math.PI/8 * Math.sin(frame_no * pace),
-		    Math.PI/8 * Math.sin(frame_no * pace),
-		    -Math.PI/4 - Math.PI/6 * Math.sin(frame_no * pace),
-		);
-		
-		set_back_right(
-		    -Math.PI/8 * Math.sin(Math.PI + frame_no * pace),
-		    -Math.PI/8 + Math.PI/8 * Math.sin(Math.PI + frame_no * pace),
-		    Math.PI/4 + Math.PI/6 * Math.sin(Math.PI + frame_no * pace),
-		);
-		
-		
-		if (!freefall){
-			squirrel_dir = target_f_point.clone().sub(target_b_point).normalize();
-			const left_right = target_l.point.clone().sub(target_r.point).normalize();
-			squirrel_up = squirrel_dir.clone().cross(left_right.clone().negate()).normalize();
-			squirrel_left = squirrel_up.clone().cross(squirrel_dir.clone()).normalize().negate();
-			var new_pos = target_b.point.clone().lerp(target_f_point, 0.5).add(squirrel_up.clone().multiplyScalar(squirrel_elevation));
-			if (new_pos.distanceTo(squirrel.position) > squirrel_elevation){
-			    new_pos = squirrel.position.clone();
-			    console.log("not going to new position");
-			}
-			squirrel.position.set(new_pos.x, new_pos.y, new_pos.z);
-		}
+		const to_freefall_limit = squirrel_elevation * 3;
+	    if (((target_f.distance > to_freefall_limit) &&
+            (target_b.distance > to_freefall_limit)) &&
+            ((target_l.distance > to_freefall_limit) &&
+            (target_r.distance > to_freefall_limit))
+        ){
+		    console.log("IN FREEFALL");
+            state["action"] = "freefall";
+            state["velocity"] = new THREE.Vector3(0, 0, 0);
+        }
 	}
+	
+	if (state["action"] == "jumping"){
+	    state["time"] += 1;
+	    set_jumping_pose();
+	}
+    
+    if(!gripping()){
+        if (((squirrel_up.x == 0) && (squirrel_up.y == -1)) && (squirrel_up.z == 0)){
+            squirrel_up = new THREE.Vector3(0, 1, 0);
+        }
+        else{
+    	    squirrel_up.lerp(new THREE.Vector3(0, 1, 0), 0.1).normalize();
+    	}
+		squirrel_dir = squirrel_up.clone().cross(squirrel_left).normalize();
+		squirrel_left = squirrel_up.clone().cross(squirrel_dir).normalize().negate();
+		const from_freefall_limit = squirrel_elevation * 1.5;
+	    if (((target_f.distance < from_freefall_limit) ||
+            (target_b.distance < from_freefall_limit)) ||
+            ((target_l.distance < from_freefall_limit) ||
+            (target_r.distance < from_freefall_limit))
+        ){
+            if(state["velocity"].dot(squirrel_up) < 0){
+                state["action"] = "walking";
+            }
+        }
+        console.log("freefall vectors ------------");
+        console.log(squirrel_up);
+        console.log(squirrel_left);
+        console.log(squirrel_dir);
+        state["velocity"].add(new THREE.Vector3(0, -0.001, 0));
+	    squirrel.position.add(state["velocity"]);
+    }
 
-	if (freefall){
-		squirrel.position.add(squirrel_up.clone().multiplyScalar(-1/60));
+	if (state["action"] == "walking"){
+	    set_walking_pose(frame_no * pace);
+		squirrel_dir = target_f_point.clone().sub(target_b_point).normalize();
+		const left_right = target_l.point.clone().sub(target_r.point).normalize();
+		squirrel_up = squirrel_dir.clone().cross(left_right.clone().negate()).normalize();
+		squirrel_left = squirrel_up.clone().cross(squirrel_dir.clone()).normalize().negate();
+		var new_pos = target_b.point.clone().lerp(target_f_point, 0.5).add(
+		    squirrel_up.clone().multiplyScalar(squirrel_elevation)
+		);
+		if (new_pos.distanceTo(squirrel.position) > squirrel_elevation){
+		    console.log("not going to new position");
+		    console.log(new_pos.distanceTo(squirrel.position));
+		    new_pos = squirrel.position.clone();
+		}
+		squirrel.position.set(new_pos.x, new_pos.y, new_pos.z);
+		squirrel.position.add(squirrel_dir.clone().multiplyScalar(pace*1.5/60));
 	}
-	else{
-		squirrel.position.add(squirrel_dir.clone().multiplyScalar(pace*3/60));
-	}
+	console.log(state["action"]);
+	
 	const m = (new THREE.Matrix4()).makeBasis(
-		squirrel_left.clone().multiplyScalar(-0.05),
-		squirrel_up.clone().multiplyScalar(0.05), //
-	    squirrel_dir.clone().multiplyScalar(-0.05) 
-	).transpose(); // ugh
-	squirrel.matrix.set(...m.elements);
+	    squirrel_left.clone().multiplyScalar(-0.05),
+	    squirrel_up.clone().multiplyScalar(0.05), //
+        squirrel_dir.clone().multiplyScalar(-0.05) 
+    ).transpose(); // ugh
+    squirrel.matrix.set(...m.elements);
+	
 	squirrel.matrix.setPosition( squirrel.position );
 	squirrel.matrixAutoUpdate = false;
 	
@@ -525,7 +554,17 @@ const animate = function () {
 	renderer.render( scene, camera );
 };
 
+var music_playing = false;
+function play_music(){
+    var audio = new Audio('sounds/squirrel song.mp3');
+    var playPromise = audio.play();
+}
+
 document.onkeydown = function(e) {
+    if (!music_playing){
+        play_music();
+        music_playing=true;
+    }
     console.log("KEYDOWN");
 	var cam_direction = new THREE.Vector3(
 		squirrel.position.x - camera.position.x,
@@ -542,11 +581,7 @@ document.onkeydown = function(e) {
 	console.log(e.keyCode);
     switch (e.keyCode) {
       case 37: // right
-	      squirrel_dir = new THREE.Vector3(
-		    squirrel_dir.x + eps * cam_orthogonal.x,
-		    squirrel_dir.y + eps * cam_orthogonal.y,
-		    squirrel_dir.z + eps * cam_orthogonal.z
-	      ).normalize();
+	      squirrel_dir.sub(squirrel_left.clone().multiplyScalar(eps)).normalize();
       break;
       case 38:
 	      squirrel_dir = new THREE.Vector3(
@@ -556,11 +591,7 @@ document.onkeydown = function(e) {
 	      ).normalize();
       break;
 	  case 39: // left
-	      squirrel_dir = new THREE.Vector3(
-		    squirrel_dir.x - eps * cam_orthogonal.x,
-		    squirrel_dir.y - eps * cam_orthogonal.y,
-		    squirrel_dir.z - eps * cam_orthogonal.z
-	      ).normalize();
+	      squirrel_dir.add(squirrel_left.clone().multiplyScalar(eps)).normalize();
       break;
 	  case 40:
 	      squirrel_dir = new THREE.Vector3(
@@ -569,8 +600,17 @@ document.onkeydown = function(e) {
 		    squirrel_dir.z - eps * cam_direction.z
 	      ).normalize();
       break;
-	  case 32: //  space
-	  squirrel.position.y = squirrel.position.y + 1;
+	  case 32: //  space initiates jump
+	      if (gripping()){
+	          state["action"] = "jumping";
+	          state["time"] = 0;
+	          state["velocity"] = squirrel_dir.clone().add(
+	              squirrel_up.multiplyScalar(0.5)
+	          ).multiplyScalar(0.02);
+	      }
+      break;
+      case 75: //  u makes squirrel go up
+	    squirrel.position.y = squirrel.position.y + 1;
       break;
       case 65: // a key, camera left
           console.log("camera left");
