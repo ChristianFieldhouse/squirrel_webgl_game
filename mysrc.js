@@ -209,9 +209,43 @@ function add_tree(x, y, scale=0.05){
 	} );
 }
 
-function add_nut(x, y){
-	loader.load( 'objects/lil_acorn.glb', function ( gltf ) {
+function add_nut(x, y, z=0, gold=false){
+    var srcfile = 'objects/lil_acorn.glb';
+    if (gold){
+        srcfile = 'objects/gold_acorn.glb'
+    }
+	loader.load(srcfile, function ( gltf ) {
+		gltf.scene.scale.set( 0.05, 0.05, 0.05 );
+		gltf.scene.rotation.y = Math.PI * 2 * Math.random();
+		gltf.scene.position.set(x, 0.15, y);
+		scene.add( gltf.scene );
+		//console.log("added gltf");
+		//console.log(gltf.scene)
 
+	}, undefined, function ( error ) {
+
+		console.error( error );
+
+	} );
+}
+
+function add_heart(x, y, z=0, gold=false){
+    var srcfile = 'objects/katies_big_big_heart.glb';
+	loader.load(srcfile, function ( gltf ) {
+		gltf.scene.scale.set( 0.05, 0.05, 0.05 );
+		gltf.scene.rotation.y = Math.PI * 2 * Math.random();
+		gltf.scene.position.set(x, 0.15, y);
+		scene.add( gltf.scene );
+		//console.log("added gltf");
+		//console.log(gltf.scene)
+
+	}, undefined, function ( error ) {
+
+		console.error( error );
+
+	} );
+	var srcfile = 'objects/torus_for_heart.glb';
+	loader.load(srcfile, function ( gltf ) {
 		gltf.scene.scale.set( 0.05, 0.05, 0.05 );
 		gltf.scene.rotation.y = Math.PI * 2 * Math.random();
 		gltf.scene.position.set(x, 0.15, y);
@@ -239,12 +273,16 @@ for(var i = -5; i < 5; ++i){
 
 //add_grass(0, 0, 500);
 
-for (var t = 0; t < 40; ++t){
+for (var t = 0; t < 20; ++t){
 	add_tree(Math.random() * 10 - 5, Math.random() * 20, 0.05);
 }
 
+for (var t = 0; t < 10; ++t){
+	add_nut(Math.random() * 10 - 5, Math.random() * 20, 0, Math.random() < 0.1);
+}
+
 for (var t = 0; t < 30; ++t){
-	add_nut(Math.random() * 10 - 5, Math.random() * 20);
+	add_heart(Math.random() * 10 - 5, Math.random() * 20, 0, Math.random() < 0.1);
 }
 
 console.log(scene.children);
