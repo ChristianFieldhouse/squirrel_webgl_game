@@ -192,12 +192,21 @@ const skyboxGeo = new THREE.BoxGeometry(100, 100, 100);
 const skybox = new THREE.Mesh(skyboxGeo, createMaterialArray());
 scene.add(skybox);
 
-function add_tree(x, y, scale=0.05){
+loader.load( 'objects/bad_squirrel_map.glb', function ( gltf ) {
+	gltf.scene.scale.set(1, 1, 1);
+	gltf.scene.rotation.y = Math.PI * 2 * Math.random();
+	gltf.scene.position.set(0, 0.0, 0);
+	scene.add(gltf.scene);
+}, undefined, function ( error ) {
+	console.error( error );
+});
+
+function add_tree(xyz, scale=0.05){
 	loader.load( 'objects/basic_bitch_tree.glb', function ( gltf ) {
 
 		gltf.scene.scale.set( scale, scale, scale );
 		gltf.scene.rotation.y = Math.PI * 2 * Math.random();
-		gltf.scene.position.set(x, 0.2, y);
+		gltf.scene.position.set(xyz.x, xyz.y, xyz.z);
 		scene.add( gltf.scene );
 		//console.log("added gltf");
 		//console.log(gltf.scene)
@@ -246,10 +255,11 @@ function add_heart(x, y, z=0, gold=false){
 	} );
 	var srcfile = 'objects/torus_for_heart.glb';
 	loader.load(srcfile, function ( gltf ) {
-		gltf.scene.scale.set( 0.05, 0.05, 0.05 );
+		gltf.scene.scale.set(0.5, 0.5, 0.5);
 		gltf.scene.rotation.y = Math.PI * 2 * Math.random();
-		gltf.scene.position.set(x, 0.15, y);
+		gltf.scene.position.set(x, 0, y);
 		scene.add( gltf.scene );
+		hoops.push(gltf.scene);
 		//console.log("added gltf");
 		//console.log(gltf.scene)
 
@@ -281,6 +291,7 @@ for (var t = 0; t < 10; ++t){
 	add_nut(Math.random() * 10 - 5, Math.random() * 20, 0, Math.random() < 0.1);
 }
 
+var hoops = [];
 for (var t = 0; t < 30; ++t){
 	add_heart(Math.random() * 10 - 5, Math.random() * 20, 0, Math.random() < 0.1);
 }
@@ -329,7 +340,13 @@ var state = {
     "action": "walking",
     "time": 0,
     "velocity": new THREE.Vector3(0, 0, 0),
+    "map_editing": true,
 }
+camera.position.x = 0;
+camera.position.y = 15;
+camera.position.z = 0;
+camera.lookAt(0, 0, 0);
+const mouse = new THREE.Vector2();
 
 const indicators = false;
 
@@ -494,6 +511,10 @@ const animate = function () {
 	    indicatorr.position.z = target_r.point.z;
 	}
 	
+	for (var i = 0; i < hoops.length; ++i){
+	    hoops[i].rotation.y += 0.01;
+	}
+	
 	var target_f_point = target_f.point;
 	var target_b_point = target_b.point;
 	if (gripping()){
@@ -584,11 +605,13 @@ const animate = function () {
 	squirrel.matrix.setPosition( squirrel.position );
 	squirrel.matrixAutoUpdate = false;
 	
-	var cam_direction = squirrel.position.clone().sub(camera.position).normalize();
-	camera.position.x = squirrel.position.x - cam_direction.x * cam_distance;
-	camera.position.z = squirrel.position.z - cam_direction.z * cam_distance;
-	camera.position.y = squirrel.position.y + cam_height;
-	camera.lookAt(squirrel.position.x, squirrel.position.y, squirrel.position.z);
+	if (!state["map_editing"]){
+	    var cam_direction = squirrel.position.clone().sub(camera.position).normalize();
+	    camera.position.x = squirrel.position.x - cam_direction.x * cam_distance;
+	    camera.position.z = squirrel.position.z - cam_direction.z * cam_distance;
+	    camera.position.y = squirrel.position.y + cam_height;
+	    camera.lookAt(squirrel.position.x, squirrel.position.y, squirrel.position.z);
+	}
 	renderer.render( scene, camera );
 };
 
@@ -651,15 +674,16 @@ document.onkeydown = function(e) {
 	    squirrel.position.y = squirrel.position.y + 1;
       break;
       case 65: // a key, camera left
-          console.log("camera left");
-	      camera.position.x += cameps * cam_orthogonal.x;
-	      camera.position.y += cameps * cam_orthogonal.y;
-	      camera.position.z += cameps * cam_orthogonal.z;
+	      camera.position.add(cam_orthogonal.clone().multiplyScalar(cameps));
       break;
       case 68: // d key, camera right
-	      camera.position.x -= cameps * cam_orthogonal.x;
-	      camera.position.y -= cameps * cam_orthogonal.y;
-	      camera.position.z -= cameps * cam_orthogonal.z;
+	      camera.position.sub(cam_orthogonal.clone().multiplyScalar(cameps));
+      break;
+      case 83: // s key, camera back
+	      camera.position.add(new THREE.Vector3(0, 0, cameps));
+      break;
+      case 87: // w key, camera forward
+	      camera.position.sub(new THREE.Vector3(0, 0, cameps));
       break;
     }
     var cam_direction = new THREE.Vector3(
@@ -684,7 +708,21 @@ function onDocumentMouseWheel( event ) {
 
 }
 
+function onDocumentClick( event ) {
+    console.log("click");
+    console.log(event);
+    
+    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+	
+	raycaster.setFromCamera( mouse, camera );
+	const intersects = raycaster.intersectObjects( scene.children );
+	console.log(intersects);
+	add_tree(intersects[0].point);
+}
+
 document.addEventListener( 'mousewheel', onDocumentMouseWheel, false );
+document.addEventListener( 'click', onDocumentClick, false );
 
 animate();
 
