@@ -193,8 +193,8 @@ const skybox = new THREE.Mesh(skyboxGeo, createMaterialArray());
 scene.add(skybox);
 
 var map_loaded = false;
-loader.load( 'objects/draft_map.glb', function ( gltf ) {
-	gltf.scene.scale.set(0.1, 0.1, 0.1);
+loader.load( 'objects/bad_squirrel_map.glb', function ( gltf ) {
+	gltf.scene.scale.set(0.4, 0.4, 0.4);
 	gltf.scene.rotation.y = Math.PI * 2 * Math.random();
 	gltf.scene.position.set(0, 0.0, 0);
 	scene.add(gltf.scene);
@@ -294,7 +294,7 @@ for(var i = -5; i < 5; ++i){
 
 //add_grass(0, 0, 500);
 
-tree_positions = [];
+var tree_positions = [];
 for (var i = 0; i < tree_positions.length; ++i){
 	add_tree(tree_positions[i]);
 }
@@ -498,7 +498,7 @@ function falling(){
 	)
 }
 
-const pace = 0.3;
+const pace = 0.6;
 var frame_no = 0;
 const animate = function () {
 	requestAnimationFrame( animate );
