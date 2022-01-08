@@ -93,7 +93,7 @@ function bone(arr){
 loader.load( 'objects/bitchin_squirrel_boy.glb', function ( gltf ) {
 
 	gltf.scene.scale.set( 0.05, 0.05, 0.05 );
-	gltf.scene.position.set(0, squirrel_elevation, 0);
+	gltf.scene.position.set(0, squirrel_elevation + 1, 0);
 	gltf.scene.name = "squirrel";
 	squirrel =  gltf.scene;
 	
@@ -192,30 +192,41 @@ const skyboxGeo = new THREE.BoxGeometry(100, 100, 100);
 const skybox = new THREE.Mesh(skyboxGeo, createMaterialArray());
 scene.add(skybox);
 
+var map_loaded = false;
 loader.load( 'objects/bad_squirrel_map.glb', function ( gltf ) {
 	gltf.scene.scale.set(1, 1, 1);
 	gltf.scene.rotation.y = Math.PI * 2 * Math.random();
 	gltf.scene.position.set(0, 0.0, 0);
 	scene.add(gltf.scene);
+	map_loaded = true;
 }, undefined, function ( error ) {
 	console.error( error );
 });
 
+var tree_model_0 = null;
+
 function add_tree(xyz, scale=0.05){
-	loader.load( 'objects/basic_bitch_tree.glb', function ( gltf ) {
+	console.log(tree_model_0);
+	if (tree_model_0 == null){
+		console.log("tree is null, loading...");
+		loader.load( 'objects/basic_bitch_tree.glb', function ( gltf ) {
 
-		gltf.scene.scale.set( scale, scale, scale );
-		gltf.scene.rotation.y = Math.PI * 2 * Math.random();
-		gltf.scene.position.set(xyz.x, xyz.y, xyz.z);
-		scene.add( gltf.scene );
-		//console.log("added gltf");
-		//console.log(gltf.scene)
-
-	}, undefined, function ( error ) {
-
-		console.error( error );
-
-	} );
+			gltf.scene.scale.set( scale, scale, scale );
+			gltf.scene.rotation.y = Math.PI * 2 * Math.random();
+			gltf.scene.position.set(xyz.x, xyz.y, xyz.z);
+			tree_model_0 = gltf.scene.clone(true);
+			scene.add(tree_model_0.clone(true));
+			console.log(tree_model_0);
+		}, undefined, function ( error ) {
+			console.error( error );
+		} );
+	}else{
+		console.log("tree is not null");
+		var new_tree = tree_model_0.clone(true);
+		new_tree.rotation.y = Math.PI * 2 * Math.random();
+		new_tree.position.set(xyz.x, xyz.y, xyz.z);
+		scene.add(new_tree);
+	}
 }
 
 function add_nut(x, y, z=0, gold=false){
@@ -277,23 +288,23 @@ scene.add( light );
 //add_cube(0, 2, colours["green"], 2);
 for(var i = -5; i < 5; ++i){
   for(var j = 0; j < 20; ++j){
-    add_grass(i, j, 1);
+    //add_grass(i, j, 1);
   }
 }
 
 //add_grass(0, 0, 500);
 
 for (var t = 0; t < 20; ++t){
-	add_tree(Math.random() * 10 - 5, Math.random() * 20, 0.05);
+	//add_tree(Math.random() * 10 - 5, Math.random() * 20, 0.05);
 }
 
 for (var t = 0; t < 10; ++t){
-	add_nut(Math.random() * 10 - 5, Math.random() * 20, 0, Math.random() < 0.1);
+	//add_nut(Math.random() * 10 - 5, Math.random() * 20, 0, Math.random() < 0.1);
 }
 
 var hoops = [];
 for (var t = 0; t < 30; ++t){
-	add_heart(Math.random() * 10 - 5, Math.random() * 20, 0, Math.random() < 0.1);
+	//add_heart(Math.random() * 10 - 5, Math.random() * 20, 0, Math.random() < 0.1);
 }
 
 console.log(scene.children);
@@ -337,7 +348,7 @@ var squirrel_up = new THREE.Vector3(0, 1, 0);
 var squirrel_target = new THREE.Vector3(0, 0, 0);
 
 var state = {
-    "action": "walking",
+    "action": "frozen",
     "time": 0,
     "velocity": new THREE.Vector3(0, 0, 0),
     "map_editing": true,
@@ -473,13 +484,27 @@ function set_jumping_pose(){
 }
 
 function gripping(){
-    return (state["action"] == "walking")
+    return (
+		(state["action"] == "walking") ||
+		(state["action"] == "sitting")
+	)
+}
+
+function falling(){
+    return (
+		(state["action"] == "freefall") ||
+		(state["action"] == "jumping")
+	)
 }
 
 const pace = 0.3;
 var frame_no = 0;
 const animate = function () {
 	requestAnimationFrame( animate );
+	
+	if (!map_loaded){
+		return;
+	}
 	
 	frame_no++;
 	const gaze_f = squirrel_dir.clone().sub(squirrel_up);
@@ -549,7 +574,7 @@ const animate = function () {
 	    set_jumping_pose();
 	}
     
-    if(!gripping()){
+    if(falling()){
         if (((squirrel_up.x == 0) && (squirrel_up.y == -1)) && (squirrel_up.z == 0)){
             squirrel_up = new THREE.Vector3(0, 1, 0);
         }
@@ -568,10 +593,6 @@ const animate = function () {
                 state["action"] = "walking";
             }
         }
-        console.log("freefall vectors ------------");
-        console.log(squirrel_up);
-        console.log(squirrel_left);
-        console.log(squirrel_dir);
         state["velocity"].add(new THREE.Vector3(0, -0.001, 0));
 	    squirrel.position.add(state["velocity"]);
     }
@@ -602,7 +623,9 @@ const animate = function () {
     ).transpose(); // ugh
     squirrel.matrix.set(...m.elements);
 	
-	squirrel.matrix.setPosition( squirrel.position );
+	if (state["action"] != "frozen"){
+		squirrel.matrix.setPosition( squirrel.position );
+	}
 	squirrel.matrixAutoUpdate = false;
 	
 	if (!state["map_editing"]){
@@ -626,7 +649,6 @@ document.onkeydown = function(e) {
         play_music();
         music_playing=true;
     }
-    console.log("KEYDOWN");
 	var cam_direction = new THREE.Vector3(
 		squirrel.position.x - camera.position.x,
 		squirrel.position.y - camera.position.y,
@@ -639,7 +661,7 @@ document.onkeydown = function(e) {
 	cam_orthogonal.cross(cam_direction);
 	const eps = 0.1;
 	const cameps = 0.1;
-	console.log(e.keyCode);
+	const roteps = 0.01;
     switch (e.keyCode) {
       case 37: // right
 	      squirrel_dir.sub(squirrel_left.clone().multiplyScalar(eps)).normalize();
@@ -670,20 +692,48 @@ document.onkeydown = function(e) {
 	          ).multiplyScalar(0.02);
 	      }
       break;
-      case 75: //  u makes squirrel go up
+      case "U".charCodeAt(0): //  u makes squirrel go up
 	    squirrel.position.y = squirrel.position.y + 1;
       break;
-      case 65: // a key, camera left
-	      camera.position.add(cam_orthogonal.clone().multiplyScalar(cameps));
+      case "D".charCodeAt(0): // a key, camera left
+		if (!state["map_editing"]){
+			camera.position.add(cam_orthogonal.clone().multiplyScalar(cameps));
+		}
+		else {
+			camera.rotation.y -= roteps;
+		}
       break;
-      case 68: // d key, camera right
-	      camera.position.sub(cam_orthogonal.clone().multiplyScalar(cameps));
+      case "A".charCodeAt(0):
+		if (!state["map_editing"]){
+			camera.position.sub(cam_orthogonal.clone().multiplyScalar(cameps));
+		}
+		else {
+			camera.rotation.y += roteps;
+		}
       break;
-      case 83: // s key, camera back
+      case "C".charCodeAt(0):
+	      camera.position.add(new THREE.Vector3(cameps, 0, 0));
+      break;
+	  case "Z".charCodeAt(0):
+	      camera.position.add(new THREE.Vector3(-cameps, 0, 0));
+      break;
+      case "S".charCodeAt(0): // s key, camera back
 	      camera.position.add(new THREE.Vector3(0, 0, cameps));
       break;
-      case 87: // w key, camera forward
+      case "W".charCodeAt(0): // w key, camera forward
 	      camera.position.sub(new THREE.Vector3(0, 0, cameps));
+      break;
+      case "E".charCodeAt(0): // e key, up
+	      camera.position.add(new THREE.Vector3(0, cameps, 0));
+      break;
+      case "Q".charCodeAt(0): // q key, camera down
+	      camera.position.sub(new THREE.Vector3(0, cameps, 0));
+      break;
+      case "R".charCodeAt(0): // e key, up
+	      camera.rotation.x += roteps;
+      break;
+      case "F".charCodeAt(0): // q key, camera down
+	      camera.rotation.x -= roteps;
       break;
     }
     var cam_direction = new THREE.Vector3(
@@ -694,14 +744,10 @@ document.onkeydown = function(e) {
 	cam_direction.y = 0;
 	cam_direction.normalize();
 	
-	console.log(squirrel_dir);
-	
 	var angle = squirrel_dir.angleTo(new THREE.Vector3(0, 0, -1));
 	if (squirrel_dir.x > 0){
 		angle = -angle;
 	}
-	//squirrel.rotation.y = angle;
-	console.log(squirrel.rotation.y);
 };
 
 function onDocumentMouseWheel( event ) {
@@ -716,8 +762,9 @@ function onDocumentClick( event ) {
 	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 	
 	raycaster.setFromCamera( mouse, camera );
-	const intersects = raycaster.intersectObjects( scene.children );
+	const intersects = raycaster.intersectObjects(scene.children, true);
 	console.log(intersects);
+	console.log(scene.children);
 	add_tree(intersects[0].point);
 }
 
