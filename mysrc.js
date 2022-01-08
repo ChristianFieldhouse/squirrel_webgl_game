@@ -194,7 +194,7 @@ scene.add(skybox);
 
 var map_loaded = false;
 loader.load( 'objects/draft_map.glb', function ( gltf ) {
-	gltf.scene.scale.set(1, 1, 1);
+	gltf.scene.scale.set(0.1, 0.1, 0.1);
 	gltf.scene.rotation.y = Math.PI * 2 * Math.random();
 	gltf.scene.position.set(0, 0.0, 0);
 	scene.add(gltf.scene);
@@ -294,8 +294,9 @@ for(var i = -5; i < 5; ++i){
 
 //add_grass(0, 0, 500);
 
-for (var t = 0; t < 20; ++t){
-	//add_tree(Math.random() * 10 - 5, Math.random() * 20, 0.05);
+tree_positions = [];
+for (var i = 0; i < tree_positions.length; ++i){
+	add_tree(tree_positions[i]);
 }
 
 for (var t = 0; t < 10; ++t){
@@ -348,17 +349,17 @@ var squirrel_up = new THREE.Vector3(0, 1, 0);
 var squirrel_target = new THREE.Vector3(0, 0, 0);
 
 var state = {
-    "action": "frozen",
+    "action": "walking",
     "time": 0,
     "velocity": new THREE.Vector3(0, 0, 0),
-    "map_editing": true,
+    "map_editing": false,
 }
 camera.position.x = 0;
 camera.position.y = 15;
 camera.position.z = 0;
 camera.lookAt(0, 0, 0);
 const mouse = new THREE.Vector2();
-
+var item_positions = [];
 const indicators = false;
 
 if (indicators){
@@ -594,6 +595,10 @@ const animate = function () {
             }
         }
         state["velocity"].add(new THREE.Vector3(0, -0.001, 0));
+		const terminal_velocity = from_freefall_limit/2;
+		if (state["velocity"].length() > terminal_velocity){
+			state["velocity"].normalize().multiplyScalar(terminal_velocity);
+		}
 	    squirrel.position.add(state["velocity"]);
     }
 
@@ -763,9 +768,9 @@ function onDocumentClick( event ) {
 	
 	raycaster.setFromCamera( mouse, camera );
 	const intersects = raycaster.intersectObjects(scene.children, true);
-	console.log(intersects);
-	console.log(scene.children);
 	add_tree(intersects[0].point);
+	item_positions.push(intersects[0].point);
+	console.log(item_positions);
 }
 
 document.addEventListener( 'mousewheel', onDocumentMouseWheel, false );
