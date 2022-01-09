@@ -48,6 +48,9 @@ var squirrel_pose = {
         0: 0,
         1: 0,
     },
+	"spine_base": {
+		0: 0,
+	}
 }
 
 var squirrel_bones = {
@@ -80,6 +83,9 @@ var squirrel_bones = {
         1: [0, 2, 0, 2, 0],
         2: [0, 2, 0, 2, 0, 0],
     },
+	"spine_base": {
+		0: [0, 2],
+	}
 }
 
 function bone(arr){
@@ -93,7 +99,7 @@ function bone(arr){
 loader.load( 'objects/bitchin_squirrel_boy.glb', function ( gltf ) {
 
 	gltf.scene.scale.set( 0.05, 0.05, 0.05 );
-	gltf.scene.position.set(0, squirrel_elevation + 1, 0);
+	gltf.scene.position.set(0, squirrel_elevation + 0.2, 0);
 	gltf.scene.name = "squirrel";
 	squirrel =  gltf.scene;
 	
@@ -119,6 +125,8 @@ loader.load( 'objects/bitchin_squirrel_boy.glb', function ( gltf ) {
     
     squirrel_pose["head"][0] = bone(squirrel_bones["head"][0]).rotation.x;
     squirrel_pose["head"][1] = bone(squirrel_bones["head"][1]).rotation.x;
+
+	squirrel_pose["spine_base"][0] = bone(squirrel_bones["spine_base"][0]).rotation.x;
 
 	scene.add(squirrel);
 	console.log("added gltf");
@@ -374,48 +382,57 @@ if (indicators){
     scene.add(indicatorr);
 }
 
+const l = 0.5;
+function set_bone(name, index, val, use_default=true){
+	var new_val = val + squirrel_pose[name][index];
+	if (!use_default){
+		new_val = val;
+	}
+	bone(squirrel_bones[name][index]).rotation.x = (new_val) * l + (1 - l) * (bone(squirrel_bones[name][index]).rotation.x);
+}
+
 function set_tail(t0, t1, t2){
-    //console.log(squirrel.children[0].children[3].rotation.x);
-    squirrel.children[0].children[3].rotation.x = t0 + squirrel_pose["tail"][0];
-    squirrel.children[0].children[3].children[0].rotation.x = t1 + squirrel_pose["tail"][1];	
-    squirrel.children[0].children[3].children[0].children[0].rotation.x = t2 + squirrel_pose["tail"][2];
+   set_bone("tail", 0, t0);
+   set_bone("tail", 1, t1);
+   set_bone("tail", 2, t2);
 }
 
 function set_front_left(t0, t1, t2){
-   //console.log(bone(squirrel_bones["front_left"][0]));
-   bone(squirrel_bones["front_left"][0]).rotation.x = t0; // + squirrel_pose["front_left"][0];
-   bone(squirrel_bones["front_left"][1]).rotation.x = t1; // + squirrel_pose["front_left"][1];
-   bone(squirrel_bones["front_left"][2]).rotation.x = t2; // + squirrel_pose["front_left"][2];
+   set_bone("front_left", 0, t0, false);
+   set_bone("front_left", 1, t1, false);
+   set_bone("front_left", 2, t2, false);
 }
 
 function set_front_right(t0, t1, t2){
-   //console.log(bone(squirrel_bones["front_left"][0]));
-   bone(squirrel_bones["front_right"][0]).rotation.x = t0; // + squirrel_pose["front_left"][0];
-   bone(squirrel_bones["front_right"][1]).rotation.x = t1; // + squirrel_pose["front_left"][1];
-   bone(squirrel_bones["front_right"][2]).rotation.x = t2; // + squirrel_pose["front_left"][2];
+   set_bone("front_right", 0, t0, false);
+   set_bone("front_right", 1, t1, false);
+   set_bone("front_right", 2, t2, false);
 }
 
 function set_back_right(t0, t1, t2){
-   //console.log(bone(squirrel_bones["front_left"][0]));
-   bone(squirrel_bones["back_right"][0]).rotation.x = t0 + squirrel_pose["back_right"][0];
-   bone(squirrel_bones["back_right"][1]).rotation.x = t1 + squirrel_pose["back_right"][1];
-   bone(squirrel_bones["back_right"][2]).rotation.x = t2 + squirrel_pose["back_right"][2];
+   set_bone("back_right", 0, t0);
+   set_bone("back_right", 1, t1);
+   set_bone("back_right", 2, t2);
 }
 
 function set_back_left(t0, t1, t2){
-   //console.log(bone(squirrel_bones["front_left"][0]));
-   bone(squirrel_bones["back_left"][0]).rotation.x = t0 + squirrel_pose["back_left"][0];
-   bone(squirrel_bones["back_left"][1]).rotation.x = t1 + squirrel_pose["back_left"][1];
-   bone(squirrel_bones["back_left"][2]).rotation.x = t2 + squirrel_pose["back_left"][2];
+   set_bone("back_left", 0, t0);
+   set_bone("back_left", 1, t1);
+   set_bone("back_left", 2, t2);
 }
 
 function set_head(t0, t1){
-   //console.log(bone(squirrel_bones["front_left"][0]));
-   bone(squirrel_bones["head"][0]).rotation.x = t0 + squirrel_pose["head"][0];
-   bone(squirrel_bones["head"][1]).rotation.x = t1 + squirrel_pose["head"][1];
+   set_bone("head", 0, t0);
+   set_bone("head", 1, t1);
+}
+
+function set_spine_base(t0){
+   set_bone("spine_base", 0, t0);
 }
 
 function set_walking_pose(param){
+	squirrel.children[0].position.y = l * (-0.35) + (1 - l) * squirrel.children[0].position.y;
+	set_spine_base(0);
 	set_head(
 		0, //Math.sin(frame_no * 0.1) * 0.4,
 	    -Math.sin(param) * 0.2
@@ -449,9 +466,11 @@ function set_walking_pose(param){
 }
 
 function set_jumping_pose(){
+	squirrel.children[0].position.y = l * (-0.35) + (1 - l) * squirrel.children[0].position.y;
     var param = state["time"] * 0.5;
     var front_param = Math.min(param, Math.PI * 2);
     var back_param = Math.min(param, Math.PI);
+	set_spine_base(0);
 	set_head(
 		0, //Math.sin(frame_no * 0.1) * 0.4,
 	    -Math.sin(param) * 0.2
@@ -484,18 +503,106 @@ function set_jumping_pose(){
 	);
 }
 
-function gripping(){
-    return (
-		(state["action"] == "walking") ||
-		(state["action"] == "sitting")
+function set_holding_on_pose(){
+	squirrel.children[0].position.y = l * (-0.35) + (1 - l) * squirrel.children[0].position.y;
+    var param = state["time"] * 0.5;
+    var front_param = Math.PI * 2;
+    var back_param = Math.PI;
+	set_spine_base(0);
+	var head_param = param * 0.678;
+	set_head(
+		0, //Math.sin(frame_no * 0.1) * 0.4,
+	    -Math.sin(head_param) * 0.2 - 0.3
 	)
+	set_tail(
+	    Math.sin(param) * 0.5 + 0.3,
+	    Math.sin(param) * 0.5 + 0.3,
+	    Math.sin(param) * 0.5 - 0.3,
+	
+	);
+	set_front_left(
+	    -Math.PI/2 + Math.PI/4 * Math.sin(Math.PI/2 + front_param),
+	    0,
+	    0
+	);
+	set_front_right(
+	    -Math.PI/16 - Math.PI/4 + Math.PI/4 * Math.sin(Math.PI/2 + front_param),
+	    0, //Math.PI/10, // - Math.PI/4 + Math.PI/4 * Math.sin(frame_no * 0.1),
+	    0
+	);
+	set_back_left(
+	    -Math.PI/8 * Math.sin(-Math.PI/2+ back_param),
+	    Math.PI/8 * Math.sin(-Math.PI/2+ back_param),
+	    -Math.PI/4 - Math.PI/6 * Math.sin(-Math.PI/2+ back_param),
+	);
+	set_back_right(
+	    -Math.PI/8 * Math.sin(-Math.PI/2+ back_param),
+	    -Math.PI/8 + Math.PI/8 * Math.sin(-Math.PI/2+ back_param),
+	    Math.PI/4 + Math.PI/6 * Math.sin(-Math.PI/2+ back_param),
+	);
+}
+
+function set_sitting_pose(){
+	squirrel.children[0].position.y = l * (-1.5) + (1 - l) * squirrel.children[0].position.y;
+    var param = state["time"] * 0.1;
+    var front_param = param * 0.3456;
+	var head_param = param * 0.678;
+	var situp = Math.PI/12 + Math.PI/100 * Math.sin(param * 0.91);
+	set_head(
+		0, //Math.sin(frame_no * 0.1) * 0.4,
+	    -Math.sin(head_param) * 0.2 - 0.3
+	)
+	set_spine_base(Math.PI/6 + situp);
+	set_tail(
+	    Math.sin(param) * 0.2 - 0.2,
+	    Math.sin(param) * 0.2 - 0.0,
+	    Math.sin(param) * 0.2 + 0.3,
+	
+	);
+	set_front_left(
+	    -Math.PI/2 + Math.PI/32 * Math.sin(front_param),
+	    0,
+	    0
+	);
+	set_front_right(
+	    -Math.PI/16 - Math.PI/4 + Math.PI/32 * Math.sin(front_param),
+	    0, //Math.PI/10, // - Math.PI/4 + Math.PI/4 * Math.sin(frame_no * 0.1),
+	    0
+	);
+	set_back_left(
+	    -Math.PI/8 * Math.sin(-Math.PI/2 + 3 * situp),
+	    Math.PI/8 * Math.sin(-Math.PI/2),
+	    -Math.PI/4 - Math.PI/6 * Math.sin(-Math.PI/2),
+	);
+	var bl_param = Math.PI/2;
+	set_back_right(
+	    -Math.PI/8 * Math.sin(-Math.PI/2 + 3 * situp),
+	    -Math.PI/8 + Math.PI/8 * Math.sin(Math.PI/2),
+	    Math.PI/4 + Math.PI/6 * Math.sin(-Math.PI/2 + bl_param),
+	);
+}
+
+
+function gripping(){
+    return [
+		"walking",
+		"sitting",
+		"holding_on"
+	].includes(state["action"]);
+}
+
+function still(){
+    return [
+		"sitting",
+		"holding_on"
+	].includes(state["action"]);
 }
 
 function falling(){
-    return (
-		(state["action"] == "freefall") ||
-		(state["action"] == "jumping")
-	)
+    return [
+		"freefall",
+		"jumping"
+	].includes(state["action"]);
 }
 
 const pace = 0.6;
@@ -550,6 +657,7 @@ const animate = function () {
                     squirrel_up.clone().multiplyScalar(1.05)
                 ).multiplyScalar(squirrel_elevation)
             )
+			//state["time"] = 0;
 	    }
 	    if (target_b.distance > squirrel_elevation * 2){
             target_b_point = squirrel.position.clone().add(
@@ -591,7 +699,7 @@ const animate = function () {
             (target_r.distance < from_freefall_limit))
         ){
             if(state["velocity"].dot(squirrel_up) < 0){
-                state["action"] = "walking";
+                start_walking();
             }
         }
         state["velocity"].add(new THREE.Vector3(0, -0.001, 0));
@@ -601,8 +709,19 @@ const animate = function () {
 		}
 	    squirrel.position.add(state["velocity"]);
     }
+	
+	if (still()){
+		state["time"] += 1;
+		if (state["action"] == "sitting"){
+			set_sitting_pose();
+		}
+		else if (state["action"] == "holding_on"){
+			set_holding_on_pose();
+		}
+	}
 
 	if (state["action"] == "walking"){
+		state["time"] += 1;
 	    set_walking_pose(frame_no * pace);
 		squirrel_dir = target_f_point.clone().sub(target_b_point).normalize();
 		const left_right = target_l.point.clone().sub(target_r.point).normalize();
@@ -618,8 +737,17 @@ const animate = function () {
 		}
 		squirrel.position.set(new_pos.x, new_pos.y, new_pos.z);
 		squirrel.position.add(squirrel_dir.clone().multiplyScalar(pace*1.5/60));
+		if (state["time"] > 15){
+			if (squirrel_up.dot(new THREE.Vector3(0, 1, 0)) > 0.8){
+				state["action"] = "sitting";
+			}
+			else{
+				state["action"] = "holding_on";
+			}
+		}
 	}
 	console.log(state["action"]);
+	//console.log(state["action"] in ["sitting"]);
 	
 	const m = (new THREE.Matrix4()).makeBasis(
 	    squirrel_left.clone().multiplyScalar(-0.05),
@@ -649,6 +777,11 @@ function play_music(){
     var playPromise = audio.play();
 }
 
+function start_walking(){
+	state["action"] = "walking";
+	state["time"] = 0;
+}
+
 document.onkeydown = function(e) {
     if (!music_playing){
         play_music();
@@ -668,78 +801,98 @@ document.onkeydown = function(e) {
 	const cameps = 0.1;
 	const roteps = 0.01;
     switch (e.keyCode) {
-      case 37: // right
-	      squirrel_dir.sub(squirrel_left.clone().multiplyScalar(eps)).normalize();
-      break;
-      case 38:
-	      squirrel_dir = new THREE.Vector3(
-		    squirrel_dir.x + eps * cam_direction.x,
-		    squirrel_dir.y + eps * cam_direction.y,
-		    squirrel_dir.z + eps * cam_direction.z
-	      ).normalize();
-      break;
-	  case 39: // left
-	      squirrel_dir.add(squirrel_left.clone().multiplyScalar(eps)).normalize();
-      break;
-	  case 40:
-	      squirrel_dir = new THREE.Vector3(
-		    squirrel_dir.x - eps * cam_direction.x,
-		    squirrel_dir.y - eps * cam_direction.y,
-		    squirrel_dir.z - eps * cam_direction.z
-	      ).normalize();
-      break;
-	  case 32: //  space initiates jump
-	      if (gripping()){
-	          state["action"] = "jumping";
-	          state["time"] = 0;
-	          state["velocity"] = squirrel_dir.clone().add(
-	              squirrel_up.multiplyScalar(0.5)
-	          ).multiplyScalar(0.02);
-	      }
-      break;
-      case "U".charCodeAt(0): //  u makes squirrel go up
-	    squirrel.position.y = squirrel.position.y + 1;
-      break;
-      case "D".charCodeAt(0): // a key, camera left
+		case 37: // right
+			if (still()){
+				start_walking();
+			}
+			if (state["action"] == "walking"){
+				squirrel_dir.sub(squirrel_left.clone().multiplyScalar(eps)).normalize();
+				state["time"] = 0;
+			}
+		break;
+		case 38:
+			if (still()){
+				start_walking();
+			}
+			if (state["action"] == "walking"){
+				state["time"] = 0;
+			}
+		break;
+		case 39: // left
+			if (still()){
+				start_walking();
+			}
+			if (state["action"] == "walking"){
+				squirrel_dir.add(squirrel_left.clone().multiplyScalar(eps)).normalize();
+				state["time"] = 0;
+			}
+		break;
+		case 40:
+			if (state["action"] == "walking"){
+				squirrel_dir.sub(cam_direction.clone().multiplyScalar(eps)).normalize();
+				state["time"] = 0;
+			}
+		break;
+		case 32: //  space initiates jump
+		  if (gripping()){
+			  state["action"] = "jumping";
+			  state["time"] = 0;
+			  state["velocity"] = squirrel_dir.clone().add(
+				  squirrel_up.multiplyScalar(0.5)
+			  ).multiplyScalar(0.02);
+		  }
+		break;
+		case "U".charCodeAt(0): //  u makes squirrel go up
+		squirrel.position.y = squirrel.position.y + 1;
+		break;
+		case "D".charCodeAt(0): // a key, camera left
 		if (!state["map_editing"]){
 			camera.position.add(cam_orthogonal.clone().multiplyScalar(cameps));
 		}
 		else {
 			camera.rotation.y -= roteps;
 		}
-      break;
-      case "A".charCodeAt(0):
+		break;
+		case "A".charCodeAt(0):
 		if (!state["map_editing"]){
 			camera.position.sub(cam_orthogonal.clone().multiplyScalar(cameps));
 		}
 		else {
 			camera.rotation.y += roteps;
 		}
-      break;
-      case "C".charCodeAt(0):
-	      camera.position.add(new THREE.Vector3(cameps, 0, 0));
-      break;
-	  case "Z".charCodeAt(0):
-	      camera.position.add(new THREE.Vector3(-cameps, 0, 0));
-      break;
-      case "S".charCodeAt(0): // s key, camera back
-	      camera.position.add(new THREE.Vector3(0, 0, cameps));
-      break;
-      case "W".charCodeAt(0): // w key, camera forward
-	      camera.position.sub(new THREE.Vector3(0, 0, cameps));
-      break;
-      case "E".charCodeAt(0): // e key, up
-	      camera.position.add(new THREE.Vector3(0, cameps, 0));
-      break;
-      case "Q".charCodeAt(0): // q key, camera down
-	      camera.position.sub(new THREE.Vector3(0, cameps, 0));
-      break;
-      case "R".charCodeAt(0): // e key, up
-	      camera.rotation.x += roteps;
-      break;
-      case "F".charCodeAt(0): // q key, camera down
-	      camera.rotation.x -= roteps;
-      break;
+		break;
+		case "C".charCodeAt(0):
+		  camera.position.add(new THREE.Vector3(cameps, 0, 0));
+		break;
+		case "Z".charCodeAt(0):
+		  camera.position.add(new THREE.Vector3(-cameps, 0, 0));
+		break;
+		case "S".charCodeAt(0): // s key, camera back
+		  camera.position.add(new THREE.Vector3(0, 0, cameps));
+		break;
+		case "W".charCodeAt(0): // w key, camera forward
+		  camera.position.sub(new THREE.Vector3(0, 0, cameps));
+		break;
+		case "E".charCodeAt(0): // e key, up
+		  camera.position.add(new THREE.Vector3(0, cameps, 0));
+		break;
+		case "Q".charCodeAt(0): // q key, camera down
+		  camera.position.sub(new THREE.Vector3(0, cameps, 0));
+		break;
+		case "R".charCodeAt(0): // e key, up
+		  camera.rotation.x += roteps;
+		break;
+		case "F".charCodeAt(0): // q key, camera down
+		  camera.rotation.x -= roteps;
+		break;
+		case "L".charCodeAt(0): // q key, camera down
+			if (state["action"] == "walking"){
+				state["action"] = "sitting";
+			}
+			else if (state["action"] == "sitting"){
+				state["action"] = "walking";
+			}
+		break;
     }
     var cam_direction = new THREE.Vector3(
 		squirrel.position.x - camera.position.x,
