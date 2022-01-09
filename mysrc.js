@@ -431,6 +431,7 @@ function set_spine_base(t0){
 }
 
 function set_walking_pose(param){
+	squirrel.children[0].position.y = l * (-0.35) + (1 - l) * squirrel.children[0].position.y;
 	set_spine_base(0);
 	set_head(
 		0, //Math.sin(frame_no * 0.1) * 0.4,
@@ -465,6 +466,7 @@ function set_walking_pose(param){
 }
 
 function set_jumping_pose(){
+	squirrel.children[0].position.y = l * (-0.35) + (1 - l) * squirrel.children[0].position.y;
     var param = state["time"] * 0.5;
     var front_param = Math.min(param, Math.PI * 2);
     var back_param = Math.min(param, Math.PI);
@@ -501,7 +503,47 @@ function set_jumping_pose(){
 	);
 }
 
+function set_holding_on_pose(){
+	squirrel.children[0].position.y = l * (-0.35) + (1 - l) * squirrel.children[0].position.y;
+    var param = state["time"] * 0.5;
+    var front_param = Math.PI * 2;
+    var back_param = Math.PI;
+	set_spine_base(0);
+	var head_param = param * 0.678;
+	set_head(
+		0, //Math.sin(frame_no * 0.1) * 0.4,
+	    -Math.sin(head_param) * 0.2 - 0.3
+	)
+	set_tail(
+	    Math.sin(param) * 0.5 + 0.3,
+	    Math.sin(param) * 0.5 + 0.3,
+	    Math.sin(param) * 0.5 - 0.3,
+	
+	);
+	set_front_left(
+	    -Math.PI/2 + Math.PI/4 * Math.sin(Math.PI/2 + front_param),
+	    0,
+	    0
+	);
+	set_front_right(
+	    -Math.PI/16 - Math.PI/4 + Math.PI/4 * Math.sin(Math.PI/2 + front_param),
+	    0, //Math.PI/10, // - Math.PI/4 + Math.PI/4 * Math.sin(frame_no * 0.1),
+	    0
+	);
+	set_back_left(
+	    -Math.PI/8 * Math.sin(-Math.PI/2+ back_param),
+	    Math.PI/8 * Math.sin(-Math.PI/2+ back_param),
+	    -Math.PI/4 - Math.PI/6 * Math.sin(-Math.PI/2+ back_param),
+	);
+	set_back_right(
+	    -Math.PI/8 * Math.sin(-Math.PI/2+ back_param),
+	    -Math.PI/8 + Math.PI/8 * Math.sin(-Math.PI/2+ back_param),
+	    Math.PI/4 + Math.PI/6 * Math.sin(-Math.PI/2+ back_param),
+	);
+}
+
 function set_sitting_pose(){
+	squirrel.children[0].position.y = l * (-1.5) + (1 - l) * squirrel.children[0].position.y;
     var param = state["time"] * 0.1;
     var front_param = param * 0.3456;
 	var head_param = param * 0.678;
@@ -542,17 +584,25 @@ function set_sitting_pose(){
 
 
 function gripping(){
-    return (
-		(state["action"] == "walking") ||
-		(state["action"] == "sitting")
-	)
+    return [
+		"walking",
+		"sitting",
+		"holding_on"
+	].includes(state["action"]);
+}
+
+function still(){
+    return [
+		"sitting",
+		"holding_on"
+	].includes(state["action"]);
 }
 
 function falling(){
-    return (
-		(state["action"] == "freefall") ||
-		(state["action"] == "jumping")
-	)
+    return [
+		"freefall",
+		"jumping"
+	].includes(state["action"]);
 }
 
 const pace = 0.6;
@@ -607,6 +657,7 @@ const animate = function () {
                     squirrel_up.clone().multiplyScalar(1.05)
                 ).multiplyScalar(squirrel_elevation)
             )
+			//state["time"] = 0;
 	    }
 	    if (target_b.distance > squirrel_elevation * 2){
             target_b_point = squirrel.position.clone().add(
@@ -648,7 +699,7 @@ const animate = function () {
             (target_r.distance < from_freefall_limit))
         ){
             if(state["velocity"].dot(squirrel_up) < 0){
-                state["action"] = "walking";
+                start_walking();
             }
         }
         state["velocity"].add(new THREE.Vector3(0, -0.001, 0));
@@ -659,15 +710,18 @@ const animate = function () {
 	    squirrel.position.add(state["velocity"]);
     }
 	
-	if (state["action"] == "sitting"){
+	if (still()){
 		state["time"] += 1;
-		set_sitting_pose();
-		squirrel.children[0].position.y = l * (-1.5) + (1 - l) * squirrel.children[0].position.y;
-	}else{
-		squirrel.children[0].position.y = l * (-0.35) + (1 - l) * squirrel.children[0].position.y;
+		if (state["action"] == "sitting"){
+			set_sitting_pose();
+		}
+		else if (state["action"] == "holding_on"){
+			set_holding_on_pose();
+		}
 	}
 
 	if (state["action"] == "walking"){
+		state["time"] += 1;
 	    set_walking_pose(frame_no * pace);
 		squirrel_dir = target_f_point.clone().sub(target_b_point).normalize();
 		const left_right = target_l.point.clone().sub(target_r.point).normalize();
@@ -683,8 +737,17 @@ const animate = function () {
 		}
 		squirrel.position.set(new_pos.x, new_pos.y, new_pos.z);
 		squirrel.position.add(squirrel_dir.clone().multiplyScalar(pace*1.5/60));
+		if (state["time"] > 15){
+			if (squirrel_up.dot(new THREE.Vector3(0, 1, 0)) > 0.8){
+				state["action"] = "sitting";
+			}
+			else{
+				state["action"] = "holding_on";
+			}
+		}
 	}
 	console.log(state["action"]);
+	//console.log(state["action"] in ["sitting"]);
 	
 	const m = (new THREE.Matrix4()).makeBasis(
 	    squirrel_left.clone().multiplyScalar(-0.05),
@@ -714,6 +777,11 @@ function play_music(){
     var playPromise = audio.play();
 }
 
+function start_walking(){
+	state["action"] = "walking";
+	state["time"] = 0;
+}
+
 document.onkeydown = function(e) {
     if (!music_playing){
         play_music();
@@ -734,16 +802,36 @@ document.onkeydown = function(e) {
 	const roteps = 0.01;
     switch (e.keyCode) {
 		case 37: // right
-			squirrel_dir.sub(squirrel_left.clone().multiplyScalar(eps)).normalize();
+			if (still()){
+				start_walking();
+			}
+			if (state["action"] == "walking"){
+				squirrel_dir.sub(squirrel_left.clone().multiplyScalar(eps)).normalize();
+				state["time"] = 0;
+			}
 		break;
 		case 38:
-		  squirrel_dir.add(cam_direction.clone().multiplyScalar(eps)).normalize();
+			if (still()){
+				start_walking();
+			}
+			if (state["action"] == "walking"){
+				state["time"] = 0;
+			}
 		break;
 		case 39: // left
-		  squirrel_dir.add(squirrel_left.clone().multiplyScalar(eps)).normalize();
+			if (still()){
+				start_walking();
+			}
+			if (state["action"] == "walking"){
+				squirrel_dir.add(squirrel_left.clone().multiplyScalar(eps)).normalize();
+				state["time"] = 0;
+			}
 		break;
 		case 40:
-		  squirrel_dir.sub(cam_direction.clone().multiplyScalar(eps)).normalize();
+			if (state["action"] == "walking"){
+				squirrel_dir.sub(cam_direction.clone().multiplyScalar(eps)).normalize();
+				state["time"] = 0;
+			}
 		break;
 		case 32: //  space initiates jump
 		  if (gripping()){
