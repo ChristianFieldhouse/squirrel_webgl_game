@@ -847,7 +847,7 @@ document.onkeydown = function(e) {
 	cam_orthogonal.cross(cam_direction);
 	const eps = 0.1;
 	const cameps = 0.1;
-	const cameps_vertical = 0.02;
+	const cameps_vertical = 0.1;
 	const roteps = 0.01;
     switch (e.keyCode) {
 		case 37: // right
@@ -896,7 +896,7 @@ document.onkeydown = function(e) {
 		break;
 		case "D".charCodeAt(0): // a key, camera left
 			if (!state["map_editing"]){
-				camera.position.add(cam_orthogonal.clone().multiplyScalar(cameps));
+				camera.position.sub(cam_orthogonal.clone().multiplyScalar(cameps));
 			}
 			else {
 				camera.rotation.y -= roteps;
@@ -904,7 +904,7 @@ document.onkeydown = function(e) {
 		break;
 		case "A".charCodeAt(0):
 			if (!state["map_editing"]){
-				camera.position.sub(cam_orthogonal.clone().multiplyScalar(cameps));
+				camera.position.add(cam_orthogonal.clone().multiplyScalar(cameps));
 			}
 			else {
 				camera.rotation.y += roteps;
@@ -919,7 +919,7 @@ document.onkeydown = function(e) {
 		case "S".charCodeAt(0): // s key, camera back
 			if (!state["map_editing"]){
 				console.log("down");
-				camera.position.add(new THREE.Vector3(0, cameps_vertical, 0));
+				camera.position.sub(new THREE.Vector3(0, cameps_vertical, 0));
 			}
 			else {
 				camera.position.sub(new THREE.Vector3(0, 0, cameps));
@@ -929,7 +929,7 @@ document.onkeydown = function(e) {
 		case "W".charCodeAt(0): // w key, camera forward
 			if (!state["map_editing"]){
 				console.log("up");
-				camera.position.sub(new THREE.Vector3(0, cameps_vertical, 0));
+				camera.position.add(new THREE.Vector3(0, cameps_vertical, 0));
 			}
 			else {
 				camera.position.sub(new THREE.Vector3(0, 0, cameps));
