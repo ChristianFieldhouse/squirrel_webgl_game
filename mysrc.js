@@ -12,7 +12,7 @@ renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 
 var squirrel;
-const squirrel_geom = new THREE.SphereGeometry(0.1);
+const squirrel_geom = new THREE.SphereGeometry(0.02);
 const smaterial = new THREE.MeshBasicMaterial( { color: 0xffa8a9 } );
 squirrel = new THREE.Mesh( squirrel_geom, smaterial );
 //scene.add( squirrel );
@@ -201,8 +201,9 @@ const skybox = new THREE.Mesh(skyboxGeo, createMaterialArray());
 scene.add(skybox);
 
 var map_loaded = false;
-loader.load( 'objects/bad_squirrel_map.glb', function ( gltf ) {
-	gltf.scene.scale.set(0.4, 0.4, 0.4);
+loader.load( 'objects/squirrel_map_katie.glb', function ( gltf ) {
+	const scale = 0.2;
+	gltf.scene.scale.set(scale, scale, scale);
 	gltf.scene.rotation.y = Math.PI * 2 * Math.random();
 	gltf.scene.position.set(0, 0.0, 0);
 	scene.add(gltf.scene);
@@ -212,7 +213,6 @@ loader.load( 'objects/bad_squirrel_map.glb', function ( gltf ) {
 });
 
 var tree_model_0 = null;
-
 function add_tree(xyz, scale=0.05){
 	console.log(tree_model_0);
 	if (tree_model_0 == null){
@@ -237,24 +237,53 @@ function add_tree(xyz, scale=0.05){
 	}
 }
 
-function add_nut(x, y, z=0, gold=false){
+var acorn_model_0 = null;
+function add_nut(xyz){
+    const srcfile = 'objects/lil_acorn.glb';
+	const up_shift = 0.1;
+	if (acorn_model_0 == null){
+		loader.load(srcfile, function ( gltf ) {
+			gltf.scene.scale.set( 0.05, 0.05, 0.05 );
+			gltf.scene.rotation.y = Math.PI * 2 * Math.random();
+			gltf.scene.position.set(xyz.x, xyz.y + up_shift, xyz.z);
+			scene.add(gltf.scene);
+			acorns.push(gltf.scene);
+			acorn_model_0 = gltf.scene.clone(true);
+		}, undefined, function ( error ) {
+			console.error( error );
+		} );
+	}
+	else{
+		console.log("acorn is not null");
+		var new_nut = acorn_model_0.clone(true);
+		new_nut.rotation.y = Math.PI * 2 * Math.random();
+		new_nut.position.set(xyz.x, xyz.y + up_shift, xyz.z);
+		scene.add(new_nut);
+	}
+}
+
+var golden_acorn_model_0 = null;
+function add_golden_nut(xyz){
     var srcfile = 'objects/lil_acorn.glb';
-    if (gold){
-        srcfile = 'objects/gold_acorn.glb'
-    }
-	loader.load(srcfile, function ( gltf ) {
-		gltf.scene.scale.set( 0.05, 0.05, 0.05 );
-		gltf.scene.rotation.y = Math.PI * 2 * Math.random();
-		gltf.scene.position.set(x, 0.15, y);
-		scene.add( gltf.scene );
-		//console.log("added gltf");
-		//console.log(gltf.scene)
-
-	}, undefined, function ( error ) {
-
-		console.error( error );
-
-	} );
+	if (golden_acorn_model_0 == null){
+		loader.load(srcfile, function ( gltf ) {
+			gltf.scene.scale.set( 0.05, 0.05, 0.05 );
+			gltf.scene.rotation.y = Math.PI * 2 * Math.random();
+			gltf.scene.position.set(xyz.x, xyz.y, xyz.z);
+			scene.add(gltf.scene);
+			acorns.push(gltf.scene);
+			golden_acorn_model_0 = gltf.scene.clone(true);
+		}, undefined, function ( error ) {
+			console.error( error );
+		} );
+	}
+	else{
+		console.log("acorn is not null");
+		var new_nut = acorn_model_0.clone(true);
+		new_nut.rotation.y = Math.PI * 2 * Math.random();
+		new_nut.position.set(xyz.x, xyz.y, xyz.z);
+		scene.add(new_nut);
+	}
 }
 
 function add_heart(x, y, z=0, gold=false){
@@ -307,6 +336,7 @@ for (var i = 0; i < tree_positions.length; ++i){
 	add_tree(tree_positions[i]);
 }
 
+var acorns = [];
 for (var t = 0; t < 10; ++t){
 	//add_nut(Math.random() * 10 - 5, Math.random() * 20, 0, Math.random() < 0.1);
 }
@@ -362,13 +392,15 @@ var state = {
     "velocity": new THREE.Vector3(0, 0, 0),
     "map_editing": false,
 }
-camera.position.x = 0;
-camera.position.y = 15;
-camera.position.z = 0;
-camera.lookAt(0, 0, 0);
+if (state["map_editing"]){
+	camera.position.x = 0;
+	camera.position.y = 15;
+	camera.position.z = 0;
+	camera.lookAt(0, 0, 0);
+}
 const mouse = new THREE.Vector2();
 var item_positions = [];
-const indicators = false;
+const indicators = true;
 
 if (indicators){
     var indicatorf = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["pink"] } ) );
@@ -376,6 +408,10 @@ if (indicators){
     var indicatorl = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["grey"] } ) );
     var indicatorr = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["purple"] } ) );
     //indicator.scale.set(0.1);
+	indicatorf.name = "Sphere";
+	indicatorb.name = "Sphere";
+	indicatorr.name = "Sphere";
+	indicatorl.name = "Sphere";
     scene.add(indicatorf);
     scene.add(indicatorb);
     scene.add(indicatorl);
@@ -605,7 +641,7 @@ function falling(){
 	].includes(state["action"]);
 }
 
-const pace = 0.6;
+const pace = 1;//0.6;
 var frame_no = 0;
 const animate = function () {
 	requestAnimationFrame( animate );
@@ -617,7 +653,7 @@ const animate = function () {
 	frame_no++;
 	const gaze_f = squirrel_dir.clone().sub(squirrel_up);
 	const gaze_b = squirrel_dir.clone().negate().sub(squirrel_up);
-	const width = 0.15;
+	const width = 0.3;
 	const gaze_l = squirrel_left.clone().multiplyScalar(width).sub(squirrel_up);
 	const gaze_r = squirrel_left.clone().multiplyScalar(-width).sub(squirrel_up);
 
@@ -651,18 +687,19 @@ const animate = function () {
 	var target_f_point = target_f.point;
 	var target_b_point = target_b.point;
 	if (gripping()){
+		var eps = 0.2;
 	    if (target_f.distance > squirrel_elevation * 2){
             target_f_point = squirrel.position.clone().add(
                 squirrel_dir.clone().sub(
-                    squirrel_up.clone().multiplyScalar(1.05)
+                    squirrel_up.clone().multiplyScalar(1 + eps)
                 ).multiplyScalar(squirrel_elevation)
             )
-			//state["time"] = 0;
+			console.log("trying to correct...");
 	    }
 	    if (target_b.distance > squirrel_elevation * 2){
             target_b_point = squirrel.position.clone().add(
                 squirrel_dir.clone().negate().sub(
-                    squirrel_up.clone().multiplyScalar(0.95)
+                    squirrel_up.clone().multiplyScalar(1 - eps)
                 ).multiplyScalar(squirrel_elevation)
             )
 	    }
@@ -737,7 +774,7 @@ const animate = function () {
 		}
 		squirrel.position.set(new_pos.x, new_pos.y, new_pos.z);
 		squirrel.position.add(squirrel_dir.clone().multiplyScalar(pace*1.5/60));
-		if (state["time"] > 15){
+		if (state["time"] > 15000000){
 			if (squirrel_up.dot(new THREE.Vector3(0, 1, 0)) > 0.8){
 				state["action"] = "sitting";
 			}
@@ -762,10 +799,21 @@ const animate = function () {
 	squirrel.matrixAutoUpdate = false;
 	
 	if (!state["map_editing"]){
-	    var cam_direction = squirrel.position.clone().sub(camera.position).normalize();
-	    camera.position.x = squirrel.position.x - cam_direction.x * cam_distance;
-	    camera.position.z = squirrel.position.z - cam_direction.z * cam_distance;
-	    camera.position.y = squirrel.position.y + cam_height;
+		raycaster.set(camera.position, new THREE.Vector3(0, -1, 0));
+		const intersects = raycaster.intersectObjects(scene.children, true);
+	    var cam_direction = squirrel.position.clone().sub(camera.position);
+		if (intersects[0].distance < cam_height){
+			console.log(intersects);
+			cam_direction.y -= (cam_height - intersects[0].distance);
+		}else{
+			//cam_direction.y += 0.005;
+		}
+		//if (cam_direction.y > 0){
+		//	cam_direction.y = 0;
+		//}
+		console.log(intersects);
+		cam_direction.normalize();
+	    camera.position.lerp(squirrel.position.clone().sub(cam_direction.clone().multiplyScalar(cam_distance)), 0.2);
 	    camera.lookAt(squirrel.position.x, squirrel.position.y, squirrel.position.z);
 	}
 	renderer.render( scene, camera );
@@ -799,6 +847,7 @@ document.onkeydown = function(e) {
 	cam_orthogonal.cross(cam_direction);
 	const eps = 0.1;
 	const cameps = 0.1;
+	const cameps_vertical = 0.02;
 	const roteps = 0.01;
     switch (e.keyCode) {
 		case 37: // right
@@ -846,20 +895,20 @@ document.onkeydown = function(e) {
 		squirrel.position.y = squirrel.position.y + 1;
 		break;
 		case "D".charCodeAt(0): // a key, camera left
-		if (!state["map_editing"]){
-			camera.position.add(cam_orthogonal.clone().multiplyScalar(cameps));
-		}
-		else {
-			camera.rotation.y -= roteps;
-		}
+			if (!state["map_editing"]){
+				camera.position.add(cam_orthogonal.clone().multiplyScalar(cameps));
+			}
+			else {
+				camera.rotation.y -= roteps;
+			}
 		break;
 		case "A".charCodeAt(0):
-		if (!state["map_editing"]){
-			camera.position.sub(cam_orthogonal.clone().multiplyScalar(cameps));
-		}
-		else {
-			camera.rotation.y += roteps;
-		}
+			if (!state["map_editing"]){
+				camera.position.sub(cam_orthogonal.clone().multiplyScalar(cameps));
+			}
+			else {
+				camera.rotation.y += roteps;
+			}
 		break;
 		case "C".charCodeAt(0):
 		  camera.position.add(new THREE.Vector3(cameps, 0, 0));
@@ -868,10 +917,23 @@ document.onkeydown = function(e) {
 		  camera.position.add(new THREE.Vector3(-cameps, 0, 0));
 		break;
 		case "S".charCodeAt(0): // s key, camera back
+			if (!state["map_editing"]){
+				console.log("down");
+				camera.position.add(new THREE.Vector3(0, cameps_vertical, 0));
+			}
+			else {
+				camera.position.sub(new THREE.Vector3(0, 0, cameps));
+			}
 		  camera.position.add(new THREE.Vector3(0, 0, cameps));
 		break;
 		case "W".charCodeAt(0): // w key, camera forward
-		  camera.position.sub(new THREE.Vector3(0, 0, cameps));
+			if (!state["map_editing"]){
+				console.log("up");
+				camera.position.sub(new THREE.Vector3(0, cameps_vertical, 0));
+			}
+			else {
+				camera.position.sub(new THREE.Vector3(0, 0, cameps));
+			}
 		break;
 		case "E".charCodeAt(0): // e key, up
 		  camera.position.add(new THREE.Vector3(0, cameps, 0));
@@ -921,7 +983,7 @@ function onDocumentClick( event ) {
 	
 	raycaster.setFromCamera( mouse, camera );
 	const intersects = raycaster.intersectObjects(scene.children, true);
-	add_tree(intersects[0].point);
+	add_nut(intersects[0].point);
 	item_positions.push(intersects[0].point);
 	console.log(item_positions);
 }
