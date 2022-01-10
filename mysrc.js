@@ -201,7 +201,7 @@ const skybox = new THREE.Mesh(skyboxGeo, createMaterialArray());
 scene.add(skybox);
 
 var map_loaded = false;
-loader.load( 'objects/squirrel_map_katie2.glb', function ( gltf ) {
+loader.load( 'objects/squirrel_map_katie_lower_poly.glb', function ( gltf ) {
 	const scale = 0.2;
 	gltf.scene.scale.set(scale, scale, scale);
 	gltf.scene.rotation.y = Math.PI * 2 * Math.random();
