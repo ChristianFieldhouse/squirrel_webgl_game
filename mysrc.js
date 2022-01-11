@@ -201,10 +201,10 @@ const skybox = new THREE.Mesh(skyboxGeo, createMaterialArray());
 scene.add(skybox);
 
 var map_loaded = false;
+const map_scale = 0.3;
+const map_width = 150 - 1;
 loader.load( 'objects/squirrel_map_katie_lower_poly.glb', function ( gltf ) {
-	const scale = 0.2;
-	gltf.scene.scale.set(scale, scale, scale);
-	gltf.scene.rotation.y = Math.PI * 2 * Math.random();
+	gltf.scene.scale.set(map_scale, map_scale, map_scale);
 	gltf.scene.position.set(0, 0.0, 0);
 	scene.add(gltf.scene);
 	map_loaded = true;
@@ -400,7 +400,7 @@ if (state["map_editing"]){
 }
 const mouse = new THREE.Vector2();
 var item_positions = [];
-const indicators = true;
+const indicators = false;
 
 if (indicators){
     var indicatorf = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["pink"] } ) );
@@ -783,7 +783,7 @@ const animate = function () {
 			}
 		}
 	}
-	console.log(state["action"]);
+	//console.log(state["action"]);
 	//console.log(state["action"] in ["sitting"]);
 	
 	const m = (new THREE.Matrix4()).makeBasis(
@@ -798,6 +798,27 @@ const animate = function () {
 	}
 	squirrel.matrixAutoUpdate = false;
 	
+	if (squirrel.position.y < -5){
+	    squirrel.position.y = 20;
+    }
+    
+    const out_of_bounds = map_scale * map_width/2;
+    squirrel.position.x = Math.min(
+        out_of_bounds, Math.max(
+            squirrel.position.x,
+            -out_of_bounds,
+        )
+    );
+    
+    squirrel.position.z = Math.min(
+        out_of_bounds, Math.max(
+            squirrel.position.z,
+            -out_of_bounds,
+        )
+    )
+    
+    console.log(squirrel.position.z, squirrel.position.x);
+	
 	if (!state["map_editing"]){
 		raycaster.set(camera.position, new THREE.Vector3(0, -1, 0));
 		const intersects = raycaster.intersectObjects(scene.children, true);
@@ -811,7 +832,7 @@ const animate = function () {
 		//if (cam_direction.y > 0){
 		//	cam_direction.y = 0;
 		//}
-		console.log(intersects);
+		//console.log(intersects);
 		cam_direction.normalize();
 	    camera.position.lerp(squirrel.position.clone().sub(cam_direction.clone().multiplyScalar(cam_distance)), 0.2);
 	    camera.lookAt(squirrel.position.x, squirrel.position.y, squirrel.position.z);
