@@ -387,7 +387,8 @@ var squirrel_up = new THREE.Vector3(0, 1, 0);
 var squirrel_target = new THREE.Vector3(0, 0, 0);
 
 var state = {
-    "action": "walking",
+    "action": "freefall",
+    "pace": 0,
     "time": 0,
     "velocity": new THREE.Vector3(0, 0, 0),
     "map_editing": false,
@@ -503,7 +504,7 @@ function set_walking_pose(param){
 
 function set_jumping_pose(){
 	squirrel.children[0].position.y = l * (-0.35) + (1 - l) * squirrel.children[0].position.y;
-    var param = state["time"] * 0.5;
+    var param = state["time"] * 0.75;
     var front_param = Math.min(param, Math.PI * 2);
     var back_param = Math.min(param, Math.PI);
 	set_spine_base(0);
@@ -630,7 +631,8 @@ function gripping(){
 function still(){
     return [
 		"sitting",
-		"holding_on"
+		"holding_on",
+		"sitting_or_holding_on"
 	].includes(state["action"]);
 }
 
@@ -641,8 +643,25 @@ function falling(){
 	].includes(state["action"]);
 }
 
-const pace = 1;//0.6;
+function stay_still(){
+	if (squirrel_up.dot(new THREE.Vector3(0, 1, 0)) > 0.8){
+		state["action"] = "sitting";
+	}
+	else{
+		state["action"] = "holding_on";
+	}
+	state["time"] = 0;
+}
+
 var frame_no = 0;
+const to_freefall_limit = squirrel_elevation * 3;
+const from_freefall_limit = squirrel_elevation * 1;
+const frame_pace_multiplier = 1.5/60;
+const velocity_glitch_limit = from_freefall_limit * 0.2;
+const pace_glitch_limit = velocity_glitch_limit / frame_pace_multiplier;
+
+console.log(pace_glitch_limit*frame_pace_multiplier, velocity_glitch_limit);
+
 const animate = function () {
 	requestAnimationFrame( animate );
 	
@@ -703,7 +722,6 @@ const animate = function () {
                 ).multiplyScalar(squirrel_elevation)
             )
 	    }
-		const to_freefall_limit = squirrel_elevation * 3;
 	    if (((target_f.distance > to_freefall_limit) &&
             (target_b.distance > to_freefall_limit)) &&
             ((target_l.distance > to_freefall_limit) &&
@@ -729,18 +747,18 @@ const animate = function () {
     	}
 		squirrel_dir = squirrel_up.clone().cross(squirrel_left).normalize();
 		squirrel_left = squirrel_up.clone().cross(squirrel_dir).normalize().negate();
-		const from_freefall_limit = squirrel_elevation * 1.5;
 	    if (((target_f.distance < from_freefall_limit) ||
             (target_b.distance < from_freefall_limit)) ||
             ((target_l.distance < from_freefall_limit) ||
             (target_r.distance < from_freefall_limit))
         ){
             if(state["velocity"].dot(squirrel_up) < 0){
-                start_walking();
+                state["action"] = "walking";
+                state["time"] = 0;
             }
         }
         state["velocity"].add(new THREE.Vector3(0, -0.001, 0));
-		const terminal_velocity = from_freefall_limit/2;
+		const terminal_velocity = velocity_glitch_limit;
 		if (state["velocity"].length() > terminal_velocity){
 			state["velocity"].normalize().multiplyScalar(terminal_velocity);
 		}
@@ -759,7 +777,7 @@ const animate = function () {
 
 	if (state["action"] == "walking"){
 		state["time"] += 1;
-	    set_walking_pose(frame_no * pace);
+	    set_walking_pose(frame_no * state["pace"]);
 		squirrel_dir = target_f_point.clone().sub(target_b_point).normalize();
 		const left_right = target_l.point.clone().sub(target_r.point).normalize();
 		squirrel_up = squirrel_dir.clone().cross(left_right.clone().negate()).normalize();
@@ -773,14 +791,9 @@ const animate = function () {
 		    new_pos = squirrel.position.clone();
 		}
 		squirrel.position.set(new_pos.x, new_pos.y, new_pos.z);
-		squirrel.position.add(squirrel_dir.clone().multiplyScalar(pace*1.5/60));
+		squirrel.position.add(squirrel_dir.clone().multiplyScalar(state["pace"]*frame_pace_multiplier));
 		if (state["time"] > 15000000){
-			if (squirrel_up.dot(new THREE.Vector3(0, 1, 0)) > 0.8){
-				state["action"] = "sitting";
-			}
-			else{
-				state["action"] = "holding_on";
-			}
+            stay_still();
 		}
 	}
 	//console.log(state["action"]);
@@ -798,8 +811,8 @@ const animate = function () {
 	}
 	squirrel.matrixAutoUpdate = false;
 	
-	if (squirrel.position.y < -5){
-	    squirrel.position.y = 20;
+	if (squirrel.position.y < -5 * map_scale){
+	    squirrel.position.y = 20 * map_scale;
     }
     
     const out_of_bounds = map_scale * map_width/2;
@@ -817,8 +830,6 @@ const animate = function () {
         )
     )
     
-    console.log(squirrel.position.z, squirrel.position.x);
-	
 	if (!state["map_editing"]){
 		raycaster.set(camera.position, new THREE.Vector3(0, -1, 0));
 		const intersects = raycaster.intersectObjects(scene.children, true);
@@ -849,8 +860,11 @@ function play_music(){
 function start_walking(){
 	state["action"] = "walking";
 	state["time"] = 0;
+	state["pace"] = 0.2;
 }
 
+console.log("pace_glitch_limit", pace_glitch_limit);
+const max_pace = Math.min(1, pace_glitch_limit);
 document.onkeydown = function(e) {
     if (!music_playing){
         play_music();
@@ -886,6 +900,8 @@ document.onkeydown = function(e) {
 			}
 			if (state["action"] == "walking"){
 				state["time"] = 0;
+				state["pace"] += 0.2;
+                state["pace"] = Math.min(state["pace"], max_pace);
 			}
 		break;
 		case 39: // left
@@ -899,8 +915,10 @@ document.onkeydown = function(e) {
 		break;
 		case 40:
 			if (state["action"] == "walking"){
-				squirrel_dir.sub(cam_direction.clone().multiplyScalar(eps)).normalize();
-				state["time"] = 0;
+				state["pace"] -= 0.2;
+			}
+			if (state["pace"] < 0.2){
+			    stay_still();
 			}
 		break;
 		case 32: //  space initiates jump
