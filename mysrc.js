@@ -401,7 +401,7 @@ if (state["map_editing"]){
 }
 const mouse = new THREE.Vector2();
 var item_positions = [];
-const indicators = true;
+const indicators = false;
 
 if (indicators){
     var indicatorf = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["pink"] } ) );
