@@ -401,7 +401,7 @@ if (state["map_editing"]){
 }
 const mouse = new THREE.Vector2();
 var item_positions = [];
-const indicators = false;
+const indicators = true;
 
 if (indicators){
     var indicatorf = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["pink"] } ) );
@@ -657,8 +657,8 @@ var frame_no = 0;
 const to_freefall_limit = squirrel_elevation * 3;
 const from_freefall_limit = squirrel_elevation * 1;
 const frame_pace_multiplier = 1.5/60;
-const velocity_glitch_limit = from_freefall_limit * 0.2;
-const pace_glitch_limit = velocity_glitch_limit / frame_pace_multiplier;
+const velocity_glitch_limit = from_freefall_limit * 1;
+const pace_glitch_limit = 0.5 * velocity_glitch_limit / frame_pace_multiplier;
 
 console.log(pace_glitch_limit*frame_pace_multiplier, velocity_glitch_limit);
 
@@ -670,12 +670,14 @@ const animate = function () {
 	}
 	
 	frame_no++;
+	const gaze_ff = squirrel_dir.clone();
 	const gaze_f = squirrel_dir.clone().sub(squirrel_up);
 	const gaze_b = squirrel_dir.clone().negate().sub(squirrel_up);
 	const width = 0.3;
 	const gaze_l = squirrel_left.clone().multiplyScalar(width).sub(squirrel_up);
 	const gaze_r = squirrel_left.clone().multiplyScalar(-width).sub(squirrel_up);
 
+    const target_ff = get_intersect(gaze_ff);
 	const target_f = get_intersect(gaze_f);
 	const target_b = get_intersect(gaze_b);
 	const target_l = get_intersect(gaze_l);
@@ -722,6 +724,9 @@ const animate = function () {
                 ).multiplyScalar(squirrel_elevation)
             )
 	    }
+	    if (target_ff.distance < to_freefall_limit){
+	        target_f_point = target_f.point.clone().lerp(target_ff.point, 0.5);
+	    }
 	    if (((target_f.distance > to_freefall_limit) &&
             (target_b.distance > to_freefall_limit)) &&
             ((target_l.distance > to_freefall_limit) &&
@@ -762,7 +767,9 @@ const animate = function () {
 		if (state["velocity"].length() > terminal_velocity){
 			state["velocity"].normalize().multiplyScalar(terminal_velocity);
 		}
-	    squirrel.position.add(state["velocity"]);
+		if (falling()){
+	        squirrel.position.add(state["velocity"]);
+	    }
     }
 	
 	if (still()){
@@ -864,7 +871,7 @@ function start_walking(){
 }
 
 console.log("pace_glitch_limit", pace_glitch_limit);
-const max_pace = Math.min(1, pace_glitch_limit);
+const max_pace = Math.min(10, pace_glitch_limit);
 document.onkeydown = function(e) {
     if (!music_playing){
         play_music();
