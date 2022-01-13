@@ -870,6 +870,52 @@ function start_walking(){
 	state["pace"] = 0.2;
 }
 
+const eps = 0.1;
+const cameps = 0.1;
+const cameps_vertical = 0.1;
+const roteps = 0.01;
+
+function right(){
+	if (still()){
+		start_walking();
+	}
+	if (state["action"] == "walking"){
+		squirrel_dir.sub(squirrel_left.clone().multiplyScalar(eps)).normalize();
+		state["time"] = 0;
+	}
+}
+
+function left(){
+	if (still()){
+		start_walking();
+	}
+	if (state["action"] == "walking"){
+		squirrel_dir.add(squirrel_left.clone().multiplyScalar(eps)).normalize();
+		state["time"] = 0;
+	}
+}
+
+function foreward(){
+	if (still()){
+		start_walking();
+	}
+	if (state["action"] == "walking"){
+		state["time"] = 0;
+		state["pace"] += 0.2;
+        state["pace"] = Math.min(state["pace"], max_pace);
+	}
+}
+
+function back(){
+	if (state["action"] == "walking"){
+		state["pace"] -= 0.2;
+	}
+	if (state["pace"] < 0.2){
+	    stay_still();
+	}
+}
+
+
 console.log("pace_glitch_limit", pace_glitch_limit);
 const max_pace = Math.min(10, pace_glitch_limit);
 document.onkeydown = function(e) {
@@ -887,46 +933,18 @@ document.onkeydown = function(e) {
 	cam_direction.normalize();
 	const cam_orthogonal = new THREE.Vector3(0, 1, 0);
 	cam_orthogonal.cross(cam_direction);
-	const eps = 0.1;
-	const cameps = 0.1;
-	const cameps_vertical = 0.1;
-	const roteps = 0.01;
     switch (e.keyCode) {
 		case 37: // right
-			if (still()){
-				start_walking();
-			}
-			if (state["action"] == "walking"){
-				squirrel_dir.sub(squirrel_left.clone().multiplyScalar(eps)).normalize();
-				state["time"] = 0;
-			}
+            right();
 		break;
-		case 38:
-			if (still()){
-				start_walking();
-			}
-			if (state["action"] == "walking"){
-				state["time"] = 0;
-				state["pace"] += 0.2;
-                state["pace"] = Math.min(state["pace"], max_pace);
-			}
+		case 38: // foreward
+            foreward();
 		break;
 		case 39: // left
-			if (still()){
-				start_walking();
-			}
-			if (state["action"] == "walking"){
-				squirrel_dir.add(squirrel_left.clone().multiplyScalar(eps)).normalize();
-				state["time"] = 0;
-			}
+            left();
 		break;
-		case 40:
-			if (state["action"] == "walking"){
-				state["pace"] -= 0.2;
-			}
-			if (state["pace"] < 0.2){
-			    stay_still();
-			}
+		case 40: // back
+		    back();
 		break;
 		case 32: //  space initiates jump
 		  if (gripping()){
@@ -1016,22 +1034,39 @@ document.onkeydown = function(e) {
 	}
 };
 
+document.ontouchstart = function(e) {
+    if (e.touches[0].clientX > window.innerWidth/2){
+        left();
+    }
+    else{
+        right();
+    }
+    if (e.touches[0].clientY < 3*window.innerHeight/4){
+        foreward();
+    }
+    else{
+        back();
+    }
+}
+
 function onDocumentMouseWheel( event ) {
 
 }
 
 function onDocumentClick( event ) {
-    console.log("click");
-    console.log(event);
-    
-    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-	
-	raycaster.setFromCamera( mouse, camera );
-	const intersects = raycaster.intersectObjects(scene.children, true);
-	add_nut(intersects[0].point);
-	item_positions.push(intersects[0].point);
-	console.log(item_positions);
+    if (state["map_editing"]){
+        console.log("click");
+        console.log(event);
+        
+        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+	    
+	    raycaster.setFromCamera( mouse, camera );
+	    const intersects = raycaster.intersectObjects(scene.children, true);
+	    add_nut(intersects[0].point);
+	    item_positions.push(intersects[0].point);
+	    console.log(item_positions);
+	}
 }
 
 document.addEventListener( 'mousewheel', onDocumentMouseWheel, false );
