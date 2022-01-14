@@ -1069,6 +1069,16 @@ function onDocumentClick( event ) {
 	}
 }
 
+window.addEventListener( 'resize', onWindowResize, false );
+function onWindowResize(){
+    console.log("resizing");
+
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize( window.innerWidth, window.innerHeight );
+}
+
 document.addEventListener( 'mousewheel', onDocumentMouseWheel, false );
 document.addEventListener( 'click', onDocumentClick, false );
 
