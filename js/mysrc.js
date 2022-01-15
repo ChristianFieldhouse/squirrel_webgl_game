@@ -694,8 +694,6 @@ const animate = function () {
 		return;
 	}
 	
-	console.log(acorn_model_0);
-	
 	frame_no++;
 	const gaze_ff = squirrel_dir.clone();
 	const gaze_f = squirrel_dir.clone().sub(squirrel_up);
@@ -780,9 +778,20 @@ const animate = function () {
 	            play_munch();
 	        }
 	    }
+	}
+	var golden_count = 0;
+	for (var i = 0; i < golden_acorns.length; ++i){
+	    if (golden_acorns[i].visible){
+	        golden_count += 1;
+	        if (squirrel.position.distanceTo(golden_acorns[i].position) < 4 * squirrel_elevation){
+	            golden_acorns[i].visible = false;
+	            play_munch();
+	        }
+	    }
 
 	}
-	if (acorn_count == 0){
+	
+	if (acorn_count + golden_count == 0){
 	    console.log("you won!")
 	}
 	document.getElementById('acorn_count').innerHTML= acorn_count;
@@ -843,10 +852,7 @@ const animate = function () {
 	            }
 	        }
 	    }
-	    console.log("target : ", target_direction);
-	    console.log("up : ", squirrel_up);
-	    console.log("diff :", target_direction.clone().multiplyScalar(target_direction.dot(squirrel_up)));
-	    target_direction.sub(target_direction.clone().multiplyScalar(target_direction.dot(squirrel_up))).normalize();
+	    target_direction.sub(squirrel_up.clone().multiplyScalar(target_direction.dot(squirrel_up))).normalize();
 	    console.log(target_direction);
 	    set_walking_pose(frame_no * 0.2);
 	    squirrel_dir.lerp(target_direction, 0.1).normalize();
