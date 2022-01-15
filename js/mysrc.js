@@ -8,7 +8,10 @@ import {
     og_tree_positions,
 	snowy_pine_positions,
     palm_tree_positions,
-    little_palm_positions
+	big_tree_positions,
+	variation_tree_positions,
+    little_palm_positions,
+	golden_acorn_positions
 } from './data_dump.js';
 console.log("imported??");
 const loader = new THREE.GLTFLoader();
@@ -158,6 +161,7 @@ var tree_model_paths = [
     'objects/palm_little.glb',
 	'objects/pine_tree.glb',
 	'objects/big_big_tree.glb',
+	'objects/variation_tree_1.glb',
 ];
 var tree_loading = [false, false, false, false, false];
 function add_tree(xyz, rotation=0, scale=0.05, model_number=0){
@@ -185,6 +189,20 @@ function add_tree(xyz, rotation=0, scale=0.05, model_number=0){
 	}
 }
 
+function add_trees(xyzs, rotation=0, scale=0.05, model_number=0){
+	loader.load(tree_model_paths[model_number], function ( gltf ) {
+		gltf.scene.scale.set( scale, scale, scale );
+		for (var i = 0; i < xyzs.length; ++i){
+			var tree_model = gltf.scene.clone(true);
+			tree_model.rotation.y = rotation;
+			tree_model.position.set(xyzs[i].x, xyzs[i].y, xyzs[i].z);
+			scene.add(tree_model);
+		}
+	}, undefined, function ( error ) {
+		console.error( error );
+	} );
+}
+
 var acorn_model_0 = null;
 function add_nut(xyz){
     const srcfile = 'objects/lil_acorn.glb';
@@ -207,37 +225,75 @@ function add_nut(xyz){
 		new_nut.rotation.y = Math.PI * 2 * Math.random();
 		new_nut.position.set(xyz.x, xyz.y + up_shift, xyz.z);
 		scene.add(new_nut);
+		acorns.push(new_nut);
 	}
 }
 
+function add_nuts(xyzs){
+    const srcfile = 'objects/lil_acorn.glb';
+	const up_shift = 0.1;
+	loader.load(srcfile, function ( gltf ) {
+		gltf.scene.scale.set( 0.05, 0.05, 0.05 );
+		for (var i = 0; i < xyzs.length; ++i){
+			var acorn_model = gltf.scene.clone(true);
+			acorn_model.rotation.y = Math.PI * 2 * Math.random();
+			acorn_model.position.set(xyzs[i].x, xyzs[i].y + up_shift, xyzs[i].z);
+			scene.add(acorn_model);
+			acorns.push(acorn_model);
+		}
+	}, undefined, function ( error ) {
+		console.error( error );
+	} );
+}
+
 var golden_acorn_model_0 = null;
-var loading_acorn_model = false;
+var loading_golden_acorn_model = false;
 function add_golden_nut(xyz){
-    var srcfile = 'objects/lil_acorn.glb';
-    while (loading_acorn_model){
-    
-    }
+    var srcfile = 'objects/gold_acorn.glb';
+	// todo : load the file once!!
+    //while (loading_golden_acorn_model){
+	//	console.log("waiting for single nut loaded");
+    //}
+	const up_shift = 0.1;
 	if (golden_acorn_model_0 == null){
-	    loading_acorn_model = true;
+	    loading_golden_acorn_model = true;
 		loader.load(srcfile, function ( gltf ) {
 			gltf.scene.scale.set( 0.05, 0.05, 0.05 );
 			gltf.scene.rotation.y = Math.PI * 2 * Math.random();
-			gltf.scene.position.set(xyz.x, xyz.y, xyz.z);
+			gltf.scene.position.set(xyz.x, xyz.y + up_shift, xyz.z);
 			scene.add(gltf.scene);
-			acorns.push(gltf.scene);
+			golden_acorns.push(gltf.scene);
 			golden_acorn_model_0 = gltf.scene.clone(true);
-			loading_acorn_model = false;
+			loading_golden_acorn_model = false;
 		}, undefined, function ( error ) {
 			console.error( error );
 		} );
 	}
 	else{
-		console.log("acorn is not null");
+		console.log("golden acorn is not null");
 		var new_nut = acorn_model_0.clone(true);
 		new_nut.rotation.y = Math.PI * 2 * Math.random();
-		new_nut.position.set(xyz.x, xyz.y, xyz.z);
+		new_nut.position.set(xyz.x, xyz.y + up_shift, xyz.z);
 		scene.add(new_nut);
+		golden_acorns.push(new_nut);
 	}
+}
+
+function add_golden_nuts(xyzs){
+    const srcfile = 'objects/gold_acorn.glb';
+	const up_shift = 0.1;
+	loader.load(srcfile, function ( gltf ) {
+		gltf.scene.scale.set( 0.05, 0.05, 0.05 );
+		for (var i = 0; i < xyzs.length; ++i){
+			var acorn_model = gltf.scene.clone(true);
+			acorn_model.rotation.y = Math.PI * 2 * Math.random();
+			acorn_model.position.set(xyzs[i].x, xyzs[i].y + up_shift, xyzs[i].z);
+			scene.add(acorn_model);
+			golden_acorns.push(acorn_model);
+		}
+	}, undefined, function ( error ) {
+		console.error( error );
+	} );
 }
 
 function add_heart(x, y, z=0, gold=false){
@@ -299,10 +355,19 @@ for (var i = 0; i < snowy_pine_positions.length; ++i){
     add_tree(snowy_pine_positions[i], 0, 0.1, 3);
 }
 
-var acorns = [];
-for (var t = 0; t < acorn_positions.length; ++t){
-	add_nut(acorn_positions[t]);
+for (var i = 0; i < big_tree_positions.length; ++i){
+    add_tree(big_tree_positions[i], 0, 0.4, 4);
 }
+
+for (var i = 0; i < variation_tree_positions.length; ++i){
+	add_tree(variation_tree_positions[i], variation_tree_positions[i]["r"], 0.4, 5);
+}
+
+var acorns = [];
+add_nuts(acorn_positions);
+
+var golden_acorns = [];
+add_golden_nuts(golden_acorn_positions);
 
 var hoops = [];
 for (var t = 0; t < 30; ++t){
@@ -629,6 +694,8 @@ const animate = function () {
 		return;
 	}
 	
+	console.log(acorn_model_0);
+	
 	frame_no++;
 	const gaze_ff = squirrel_dir.clone();
 	const gaze_f = squirrel_dir.clone().sub(squirrel_up);
@@ -703,6 +770,7 @@ const animate = function () {
 	    set_jumping_pose();
 	}
 	
+	//cosole.log(acorns);
 	var acorn_count = 0;
 	for (var i = 0; i < acorns.length; ++i){
 	    if (acorns[i].visible){
@@ -1105,7 +1173,7 @@ function onDocumentClick( event ) {
 	    
 	    raycaster.setFromCamera( mouse, camera );
 	    const intersects = raycaster.intersectObjects(scene.children, true);
-	    add_tree(intersects[0].point, 0, 0.1, 3);
+	    add_golden_nut(intersects[0].point);
 	    item_positions.push(intersects[0].point);
 	    console.log(item_positions);
 	}
