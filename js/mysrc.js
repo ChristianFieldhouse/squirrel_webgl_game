@@ -328,6 +328,7 @@ var state = {
     "time": 0,
     "velocity": new THREE.Vector3(0, 0, 0),
     "map_editing": false,
+    "title_screen": true,
 }
 if (state["map_editing"]){
 	camera.position.x = 0;
@@ -677,18 +678,21 @@ const animate = function () {
 	    set_jumping_pose();
 	}
 	
-	var all_acorns_gotten = true;
+	var acorn_count = 0;
 	for (var i = 0; i < acorns.length; ++i){
 	    if (acorns[i].visible){
-	        all_acorns_gotten = false;
+	        acorn_count += 1;
+	        if (squirrel.position.distanceTo(acorns[i].position) < 4 * squirrel_elevation){
+	            acorns[i].visible = false;
+	            play_munch();
+	        }
 	    }
-	    if (squirrel.position.distanceTo(acorns[i].position) < 4 * squirrel_elevation){
-	        acorns[i].visible = false;
-	    }
+
 	}
-	if (all_acorns_gotten){
+	if (acorn_count == 0){
 	    console.log("you won!")
 	}
+	document.getElementById('acorn_count').innerHTML= acorn_count;
     
     if(falling()){
         if (((squirrel_up.x == 0) && (squirrel_up.y == -1)) && (squirrel_up.z == 0)){
@@ -747,14 +751,15 @@ const animate = function () {
 	        }
 	    }
 	    console.log("target : ", target_direction);
+	    console.log("up : ", squirrel_up);
+	    console.log("diff :", target_direction.clone().multiplyScalar(target_direction.dot(squirrel_up)));
 	    target_direction.sub(target_direction.clone().multiplyScalar(target_direction.dot(squirrel_up))).normalize();
 	    console.log(target_direction);
 	    set_walking_pose(frame_no * 0.2);
 	    squirrel_dir.lerp(target_direction, 0.1).normalize();
 		squirrel_left = squirrel_up.clone().cross(squirrel_dir.clone()).normalize().negate();
 		if (state["time"] > 30){
-		    state["action"] = "sitting_or_holding_on";
-		    state["time"] = 0;
+		    stay_still();
 		}
 		
 	}
@@ -786,8 +791,17 @@ const animate = function () {
 	else if (!muted && audio.paused){
 	    play_music();
 	}
-	//console.log(state["action"]);
-	//console.log(state["action"] in ["sitting"]);
+	
+	for (var i = 0; i < local_sounds.length; ++i){
+	    if (
+	        squirrel.position.distanceTo(local_sounds[i][0].clone().multiplyScalar(map_scale)) < 
+	        local_sounds[i][1] * map_scale
+	    ){
+	        if (local_sounds[i][2].paused){
+	            local_sounds[i][2].play();
+	        }
+	    }
+	}
 	
 	const m = (new THREE.Matrix4()).makeBasis(
 	    squirrel_left.clone().multiplyScalar(-0.05),
@@ -843,11 +857,25 @@ const animate = function () {
 
 var music_playing = false;
 var audio = new Audio('sounds/squirrel song.mp3');
+var munch_audio_katie = new Audio('sounds/munch_katie.mp3');
+var munch_audio_christian = new Audio('sounds/munch_christian.mp3');
+var local_sounds = [
+    [new THREE.Vector3(-64, 0, 65), 15, new Audio('sounds/ufo_sound.mp3')],
+    [new THREE.Vector3(15, 0, -59), 5, new Audio('sounds/fire_sound.mp3')],
+    [new THREE.Vector3(-58, 0, -28), 3, new Audio('sounds/alien.mp3')],
+];
 function play_music(){
     var playPromise = audio.play();
 }
 function pause_music(){
     audio.pause();
+}
+function play_munch(){
+    if (Math.random() < 0.5){
+        munch_audio_christian.play();
+    }else{
+        munch_audio_katie.play();
+    }
 }
 
 function start_walking(){
@@ -906,6 +934,9 @@ document.onkeydown = function(e) {
     if (!music_playing){
         play_music();
         music_playing=true;
+    }
+    if (!document.getElementById("title_screen").hidden){
+        document.getElementById("title_screen").hidden = true;
     }
 	var cam_direction = new THREE.Vector3(
 		squirrel.position.x - camera.position.x,
