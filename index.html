@@ -4,13 +4,38 @@
 		<meta charset="utf-8">
 		<title>Nutty's nutty adventure</title>
 		<style>
-			body { margin: 0; }
+			body {
+			  margin: 0;
+              overflow: hidden;
+            }
+
+            .ui {
+              position: absolute;
+            }
+
+            button{
+              margin: 20px;
+            }
 		</style>
 	</head>
 	<body>
 		<!--script src="node_modules/three/build/three.js"></script-->
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r127/three.js"></script>
 		<script src="https://unpkg.com/three@0.127.0/examples/js/loaders/GLTFLoader.js"></script>
-        <script src="mysrc.js" type="module"></script>
+		<script>
+		var muted = false;
+        function mute(){
+            muted = !muted;
+            console.log("button clicked!", muted);
+            console.log(document.getElementById("sound_button").innerHTML.src);
+            if (muted){
+                document.getElementById("sound_button").innerHTML = '<img src="images/music_off.png">';
+            }else{
+                document.getElementById("sound_button").innerHTML = '<img src="images/music_on.png">';
+            }
+        }
+        </script>
+        <script src="js/mysrc.js" type="module"></script>
+        <button style="top:0; border:0px solid black; background-color: transparent;" id="sound_button" class="ui" onclick="mute()"><img src="images/music_on.png"></button>
 	</body>
 </html>
