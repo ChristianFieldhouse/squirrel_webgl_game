@@ -1,7 +1,14 @@
 
 //'use strict';
 //import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader.js';
-import { acorn_positions, squirrel_pose, squirrel_bones } from './data_dump.js';
+import {
+    acorn_positions,
+    squirrel_pose,
+    squirrel_bones,
+    og_tree_positions,
+    palm_tree_positions,
+    little_palm_positions
+} from './data_dump.js';
 console.log("imported??");
 const loader = new THREE.GLTFLoader();
 
@@ -143,26 +150,33 @@ loader.load( 'objects/squirrel_map_katie_lower_poly.glb', function ( gltf ) {
 	console.error( error );
 });
 
-var tree_model_0 = null;
-function add_tree(xyz, scale=0.05){
-	console.log(tree_model_0);
-	if (tree_model_0 == null){
+var tree_models = [null, null, null];
+var tree_model_paths = [
+    'objects/basic_bitch_tree.glb',
+    'objects/palm_tree_1.glb',
+    'objects/palm_little.glb',
+];
+var tree_loading = [false, false, false];
+function add_tree(xyz, rotation=0, scale=0.05, model_number=0){
+	while (tree_loading[model_number]){
+    }
+	if (tree_models[model_number] == null){
 		console.log("tree is null, loading...");
-		loader.load( 'objects/basic_bitch_tree.glb', function ( gltf ) {
-
+		loader.load(tree_model_paths[model_number], function ( gltf ) {
+            tree_loading[model_number] = true;
 			gltf.scene.scale.set( scale, scale, scale );
-			gltf.scene.rotation.y = Math.PI * 2 * Math.random();
+			gltf.scene.rotation.y = rotation;
 			gltf.scene.position.set(xyz.x, xyz.y, xyz.z);
-			tree_model_0 = gltf.scene.clone(true);
-			scene.add(tree_model_0.clone(true));
-			console.log(tree_model_0);
+			tree_models[model_number] = gltf.scene.clone(true);
+			scene.add(tree_models[model_number].clone(true));
+			tree_loading[model_number] = false;
 		}, undefined, function ( error ) {
 			console.error( error );
 		} );
 	}else{
 		console.log("tree is not null");
-		var new_tree = tree_model_0.clone(true);
-		new_tree.rotation.y = Math.PI * 2 * Math.random();
+		var new_tree = tree_models[model_number].clone(true);
+		new_tree.rotation.y = rotation;
 		new_tree.position.set(xyz.x, xyz.y, xyz.z);
 		scene.add(new_tree);
 	}
@@ -266,13 +280,17 @@ for(var i = -5; i < 5; ++i){
   }
 }
 
-//add_grass(0, 0, 500);
-
-var tree_positions = [];
-for (var i = 0; i < tree_positions.length; ++i){
-	add_tree(tree_positions[i]);
+for (var i = 0; i < palm_tree_positions.length; ++i){
+	add_tree(palm_tree_positions[i], 0, 0.1, 1);
 }
 
+for (var i = 0; i < little_palm_positions.length; ++i){
+	add_tree(little_palm_positions[i], 0, 0.1, 2);
+}
+
+for (var i = 0; i < og_tree_positions.length; ++i){
+    add_tree(og_tree_positions[i], og_tree_positions[i]["r"], 0.05, 0);
+}
 
 var acorns = [];
 for (var t = 0; t < acorn_positions.length; ++t){
@@ -1069,7 +1087,7 @@ function onDocumentMouseWheel( event ) {
 }
 
 // todo : sort out this vs. map_editing
-const click_to_add = false;
+const click_to_add = true;
 function onDocumentClick( event ) {
     if (click_to_add){
         console.log("click");
@@ -1080,7 +1098,7 @@ function onDocumentClick( event ) {
 	    
 	    raycaster.setFromCamera( mouse, camera );
 	    const intersects = raycaster.intersectObjects(scene.children, true);
-	    add_nut(intersects[0].point);
+	    add_tree(intersects[0].point, 0, 0.05, 0);
 	    item_positions.push(intersects[0].point);
 	    console.log(item_positions);
 	}
