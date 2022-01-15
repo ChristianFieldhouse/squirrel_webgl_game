@@ -6,6 +6,7 @@ import {
     squirrel_pose,
     squirrel_bones,
     og_tree_positions,
+	snowy_pine_positions,
     palm_tree_positions,
     little_palm_positions
 } from './data_dump.js';
@@ -150,13 +151,15 @@ loader.load( 'objects/squirrel_map_katie_lower_poly.glb', function ( gltf ) {
 	console.error( error );
 });
 
-var tree_models = [null, null, null];
+var tree_models = [null, null, null, null, null];
 var tree_model_paths = [
     'objects/basic_bitch_tree.glb',
     'objects/palm_tree_1.glb',
     'objects/palm_little.glb',
+	'objects/pine_tree.glb',
+	'objects/big_big_tree.glb',
 ];
-var tree_loading = [false, false, false];
+var tree_loading = [false, false, false, false, false];
 function add_tree(xyz, rotation=0, scale=0.05, model_number=0){
 	while (tree_loading[model_number]){
     }
@@ -290,6 +293,10 @@ for (var i = 0; i < little_palm_positions.length; ++i){
 
 for (var i = 0; i < og_tree_positions.length; ++i){
     add_tree(og_tree_positions[i], og_tree_positions[i]["r"], 0.05, 0);
+}
+
+for (var i = 0; i < snowy_pine_positions.length; ++i){
+    add_tree(snowy_pine_positions[i], 0, 0.1, 3);
 }
 
 var acorns = [];
@@ -1098,7 +1105,7 @@ function onDocumentClick( event ) {
 	    
 	    raycaster.setFromCamera( mouse, camera );
 	    const intersects = raycaster.intersectObjects(scene.children, true);
-	    add_tree(intersects[0].point, 0, 0.05, 0);
+	    add_tree(intersects[0].point, 0, 0.1, 3);
 	    item_positions.push(intersects[0].point);
 	    console.log(item_positions);
 	}
