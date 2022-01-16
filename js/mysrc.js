@@ -44,7 +44,7 @@ function bone(arr){
 loader.load( 'objects/bitchin_squirrel_boy.glb', function ( gltf ) {
 
 	gltf.scene.scale.set( 0.05, 0.05, 0.05 );
-	gltf.scene.position.set(0, squirrel_elevation + 0.2, 0);
+	gltf.scene.position.set(3, squirrel_elevation + 0.2, -3);
 	gltf.scene.name = "squirrel";
 	squirrel =  gltf.scene;
 	
@@ -142,14 +142,45 @@ const skyboxGeo = new THREE.BoxGeometry(100, 100, 100);
 const skybox = new THREE.Mesh(skyboxGeo, createMaterialArray());
 scene.add(skybox);
 
-var map_loaded = false;
+var loaded = {
+    "map": false,
+    "trees": [false, false, false, false, false],
+    "acorns": false,
+    "golden_acorns": false,
+};
+function everything_loaded(){
+    //console.log(loaded);
+    if (state["game_stage"] != "loading"){
+        return true;
+    }
+    var r = (
+        loaded["map"] &
+        loaded["trees"][0] &
+        loaded["trees"][1] &
+        loaded["trees"][2] &
+        loaded["trees"][3] &
+        loaded["trees"][4] &
+        loaded["acorns"] &
+        loaded["golden_acorns"]
+    );
+    if (r){
+        document.getElementById("loading_screen").hidden = true;
+        document.getElementById("title_screen").hidden = false;
+        document.getElementById("sound_button").hidden = false;
+        document.getElementById("acorn_count").hidden = false;
+        document.getElementById("golden_acorn_count").hidden = false;
+        state["game_stage"] = "title_screen";
+        return true;
+    }
+    return false;
+}
 const map_scale = 0.3;
 const map_width = 150 - 1;
 loader.load( 'objects/squirrel_map_katie_lower_poly.glb', function ( gltf ) {
 	gltf.scene.scale.set(map_scale, map_scale, map_scale);
 	gltf.scene.position.set(0, 0.0, 0);
 	scene.add(gltf.scene);
-	map_loaded = true;
+	loaded["map"] = true;
 }, undefined, function ( error ) {
 	console.error( error );
 });
@@ -189,15 +220,16 @@ function add_tree(xyz, rotation=0, scale=0.05, model_number=0){
 	}
 }
 
-function add_trees(xyzs, rotation=0, scale=0.05, model_number=0){
+function add_trees(xyzrs, scale=0.05, model_number=0){
 	loader.load(tree_model_paths[model_number], function ( gltf ) {
 		gltf.scene.scale.set( scale, scale, scale );
-		for (var i = 0; i < xyzs.length; ++i){
+		for (var i = 0; i < xyzrs.length; ++i){
 			var tree_model = gltf.scene.clone(true);
-			tree_model.rotation.y = rotation;
-			tree_model.position.set(xyzs[i].x, xyzs[i].y, xyzs[i].z);
+			tree_model.rotation.y = xyzrs[i].r;
+			tree_model.position.set(xyzrs[i].x, xyzrs[i].y, xyzrs[i].z);
 			scene.add(tree_model);
 		}
+		loaded["trees"][model_number] = true;
 	}, undefined, function ( error ) {
 		console.error( error );
 	} );
@@ -241,6 +273,7 @@ function add_nuts(xyzs){
 			scene.add(acorn_model);
 			acorns.push(acorn_model);
 		}
+		loaded["acorns"] = true;
 	}, undefined, function ( error ) {
 		console.error( error );
 	} );
@@ -250,10 +283,6 @@ var golden_acorn_model_0 = null;
 var loading_golden_acorn_model = false;
 function add_golden_nut(xyz){
     var srcfile = 'objects/gold_acorn.glb';
-	// todo : load the file once!!
-    //while (loading_golden_acorn_model){
-	//	console.log("waiting for single nut loaded");
-    //}
 	const up_shift = 0.1;
 	if (golden_acorn_model_0 == null){
 	    loading_golden_acorn_model = true;
@@ -291,6 +320,7 @@ function add_golden_nuts(xyzs){
 			scene.add(acorn_model);
 			golden_acorns.push(acorn_model);
 		}
+		loaded["golden_acorns"] = true;
 	}, undefined, function ( error ) {
 		console.error( error );
 	} );
@@ -303,8 +333,6 @@ function add_heart(x, y, z=0, gold=false){
 		gltf.scene.rotation.y = Math.PI * 2 * Math.random();
 		gltf.scene.position.set(x, 0.15, y);
 		scene.add( gltf.scene );
-		//console.log("added gltf");
-		//console.log(gltf.scene)
 
 	}, undefined, function ( error ) {
 
@@ -318,8 +346,6 @@ function add_heart(x, y, z=0, gold=false){
 		gltf.scene.position.set(x, 0, y);
 		scene.add( gltf.scene );
 		hoops.push(gltf.scene);
-		//console.log("added gltf");
-		//console.log(gltf.scene)
 
 	}, undefined, function ( error ) {
 
@@ -331,37 +357,12 @@ function add_heart(x, y, z=0, gold=false){
 var light = new THREE.HemisphereLight( 0xffffbb, 0x080820, 1 );
 scene.add( light );
 
-//add_tree(0, 2, 0.05 * 5);
-//add_cube(0, 2, colours["green"], 2);
-for(var i = -5; i < 5; ++i){
-  for(var j = 0; j < 20; ++j){
-    //add_grass(i, j, 1);
-  }
-}
-
-for (var i = 0; i < palm_tree_positions.length; ++i){
-	add_tree(palm_tree_positions[i], 0, 0.1, 1);
-}
-
-for (var i = 0; i < little_palm_positions.length; ++i){
-	add_tree(little_palm_positions[i], 0, 0.1, 2);
-}
-
-for (var i = 0; i < og_tree_positions.length; ++i){
-    add_tree(og_tree_positions[i], og_tree_positions[i]["r"], 0.05, 0);
-}
-
-for (var i = 0; i < snowy_pine_positions.length; ++i){
-    add_tree(snowy_pine_positions[i], 0, 0.1, 3);
-}
-
-for (var i = 0; i < big_tree_positions.length; ++i){
-    add_tree(big_tree_positions[i], 0, 0.4, 4);
-}
-
-for (var i = 0; i < variation_tree_positions.length; ++i){
-	add_tree(variation_tree_positions[i], variation_tree_positions[i]["r"], 0.4, 5);
-}
+add_trees(og_tree_positions, 0.05, 0);
+add_trees(palm_tree_positions, 0.1, 1);
+add_trees(little_palm_positions, 0.1, 2);
+add_trees(snowy_pine_positions, 0.1, 3);
+add_trees(big_tree_positions, 0.4, 4);
+add_trees(variation_tree_positions, 0.4, 5);
 
 var acorns = [];
 add_nuts(acorn_positions);
@@ -418,7 +419,7 @@ var state = {
     "time": 0,
     "velocity": new THREE.Vector3(0, 0, 0),
     "map_editing": false,
-    "title_screen": true,
+    "game_stage": "loading",
 }
 if (state["map_editing"]){
 	camera.position.x = 0;
@@ -690,7 +691,7 @@ const pace_glitch_limit = 0.5 * velocity_glitch_limit / frame_pace_multiplier;
 const animate = function () {
 	requestAnimationFrame( animate );
 	
-	if (!map_loaded){
+	if (!everything_loaded()){
 		return;
 	}
 	
@@ -795,6 +796,7 @@ const animate = function () {
 	    console.log("you won!")
 	}
 	document.getElementById('acorn_count').innerHTML= acorn_count;
+	document.getElementById('golden_acorn_count').innerHTML= golden_count;
     
     if(falling()){
         if (((squirrel_up.x == 0) && (squirrel_up.y == -1)) && (squirrel_up.z == 0)){
@@ -807,10 +809,24 @@ const animate = function () {
 		squirrel_left = squirrel_up.clone().cross(squirrel_dir).normalize().negate();
 	    if (((target_f.distance < from_freefall_limit) ||
             (target_b.distance < from_freefall_limit)) ||
-            ((target_l.distance < from_freefall_limit) ||
-            (target_r.distance < from_freefall_limit))
+            (((target_l.distance < from_freefall_limit) ||
+            (target_r.distance < from_freefall_limit)) ||
+            (target_ff.distance < from_freefall_limit))
         ){
-            if(state["velocity"].dot(squirrel_up) < 0){
+            var closest_intersect = target_f;
+            if (target_ff.distance < closest_intersect.distance){
+                closest_intersect = target_ff;
+            }
+            if (target_b.distance < closest_intersect.distance){
+                closest_intersect = target_b;
+            }
+            if (target_l.distance < closest_intersect.distance){
+                closest_intersect = target_l;
+            }
+            if (target_r.distance < closest_intersect.distance){
+                closest_intersect = target_r;
+            }
+            if(state["velocity"].dot(squirrel.position.clone().sub(closest_intersect.point)) < 0){
                 state["action"] = "walking";
                 state["time"] = 0;
             }
@@ -933,7 +949,12 @@ const animate = function () {
         )
     )
     
-	if (!state["map_editing"]){
+    if (state["game_stage"] == "title_screen"){
+        var cam_direction = squirrel.position.clone().sub(camera.position);
+        cam_direction.normalize();
+		camera.position.sub(cam_direction.cross(new THREE.Vector3(0, 1, 0)).multiplyScalar(0.01));
+	    camera.lookAt(squirrel.position.x, squirrel.position.y, squirrel.position.z);
+	}else if (!state["map_editing"]){
 		raycaster.set(camera.position, new THREE.Vector3(0, -1, 0));
 		const intersects = raycaster.intersectObjects(scene.children, true);
 	    var cam_direction = squirrel.position.clone().sub(camera.position);
@@ -951,6 +972,7 @@ const animate = function () {
 	    camera.position.lerp(squirrel.position.clone().sub(cam_direction.clone().multiplyScalar(cam_distance)), 0.2);
 	    camera.lookAt(squirrel.position.x, squirrel.position.y, squirrel.position.z);
 	}
+	
 	renderer.render( scene, camera );
 };
 
@@ -1034,8 +1056,9 @@ document.onkeydown = function(e) {
         play_music();
         music_playing=true;
     }
-    if (!document.getElementById("title_screen").hidden){
+    if (state["game_stage"] == "title_screen"){
         document.getElementById("title_screen").hidden = true;
+        state["game_stage"] = "playing";
     }
 	var cam_direction = new THREE.Vector3(
 		squirrel.position.x - camera.position.x,
@@ -1168,7 +1191,7 @@ function onDocumentMouseWheel( event ) {
 }
 
 // todo : sort out this vs. map_editing
-const click_to_add = true;
+const click_to_add = false;
 function onDocumentClick( event ) {
     if (click_to_add){
         console.log("click");
