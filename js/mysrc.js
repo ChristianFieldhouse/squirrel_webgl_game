@@ -793,7 +793,10 @@ const animate = function () {
 	}
 	
 	if (acorn_count + golden_count == 0){
-	    console.log("you won!")
+	    console.log("you won!");
+	    state["game_stage"] = "title_screen";
+	    document.getElementById('win_screen').hidden = false;
+	    document.getElementById('score_div').hidden = false;
 	}
 	document.getElementById('acorn_count').innerHTML= acorn_count;
 	document.getElementById('golden_acorn_count').innerHTML= golden_count;
