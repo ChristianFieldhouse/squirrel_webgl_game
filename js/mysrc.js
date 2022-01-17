@@ -1185,6 +1185,12 @@ document.onkeydown = function(e) {
 };
 
 document.ontouchstart = function(e) {
+    if (state["game_stage"] == "title_screen"){
+        document.getElementById("title_screen").hidden = true;
+        state["game_stage"] = "playing";
+        const date = new Date();
+        state["start_time"] = date.getTime();
+    }
     if (e.touches[0].clientX > window.innerWidth/2){
         left();
     }
