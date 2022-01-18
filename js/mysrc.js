@@ -3,6 +3,7 @@
 //import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader.js';
 import {
     acorn_positions,
+    oasis_acorns,
     squirrel_pose,
     squirrel_bones,
     og_tree_positions,
@@ -365,7 +366,18 @@ add_trees(big_tree_positions, 0.4, 4);
 add_trees(variation_tree_positions, 0.4, 5);
 
 var acorns = [];
-add_nuts(acorn_positions);
+var random_acorn_positions = [];
+for (var i = 0; i < oasis_acorns.length; ++i){
+    random_acorn_positions.push(oasis_acorns[i]);
+}
+const target_acorn_total = 20;
+while (random_acorn_positions.length < target_acorn_total){
+    var new_pos = acorn_positions[Math.floor(Math.random() * acorn_positions.length)];
+    if (!random_acorn_positions.includes(new_pos)){
+        random_acorn_positions.push(new_pos);
+    }
+}
+add_nuts(random_acorn_positions);
 
 var golden_acorns = [];
 add_golden_nuts(golden_acorn_positions);
@@ -778,9 +790,23 @@ const animate = function () {
 	        if (squirrel.position.distanceTo(acorns[i].position) < 4 * squirrel_elevation){
 	            acorns[i].visible = false;
 	            play_munch();
+	            document.getElementById("hint_button").innerHTML = "Hint";
 	        }
 	    }
 	}
+	if (acorn_count < acorns.length/10){
+	    hint_number = 3;
+	    document.getElementById("hint_button").style.color = "red";
+	}
+	else if (acorn_count < acorns.length/5){
+	    hint_number = 2;
+	    document.getElementById("hint_button").style.color = "orange";
+	}
+	else if (acorn_count < acorns.length/2){
+	    hint_number = 1;
+	    document.getElementById("hint_button").style.color = "yellow";
+	}
+
 	var golden_count = 0;
 	for (var i = 0; i < golden_acorns.length; ++i){
 	    if (golden_acorns[i].visible){
@@ -870,11 +896,12 @@ const animate = function () {
 	    state["time"] += 1;
 		var target_direction = new THREE.Vector3(0, 0, 0);
 		var closest_distance = 1000000;
-	    for (var i = 0; i < acorns.length; ++i){
-	    	if (acorns[i].visible){
-	            const distance = squirrel.position.distanceTo(acorns[i].position);
+		var all_acorns = acorns.concat(golden_acorns);
+	    for (var i = 0; i < all_acorns.length; ++i){
+	    	if (all_acorns[i].visible){
+	            const distance = squirrel.position.distanceTo(all_acorns[i].position);
 	            if (distance < closest_distance){
-                    target_direction = acorns[i].position.clone().sub(squirrel.position).normalize();
+                    target_direction = all_acorns[i].position.clone().sub(squirrel.position).normalize();
                     closest_distance = distance;
 	            }
 	        }
@@ -1221,7 +1248,7 @@ function onDocumentClick( event ) {
 	    
 	    raycaster.setFromCamera( mouse, camera );
 	    const intersects = raycaster.intersectObjects(scene.children, true);
-	    add_golden_nut(intersects[0].point);
+	    add_nut(intersects[0].point);
 	    item_positions.push(intersects[0].point);
 	    console.log(item_positions);
 	}
