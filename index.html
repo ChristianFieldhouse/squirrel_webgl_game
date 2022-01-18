@@ -44,6 +44,7 @@
                 }else{
                     document.getElementById("sound_button").innerHTML = '<img src="images/music_on.png">';
                 }
+                document.getElementById("sound_button").blur()
             }
             var hint_number = 0;
             function hint(){
@@ -53,6 +54,7 @@
                     "Maybe nutty will show you the way",
                     "If nutty gets a rest, he might be able to smell the nuts"
                 ][hint_number]
+                document.getElementById("hint_button").blur()
             }
         </script>
         <script src="js/mysrc.js" type="module"></script>
