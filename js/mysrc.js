@@ -165,10 +165,13 @@ function everything_loaded(){
         loaded["golden_acorns"]
     );
     if (r){
+        console.log("finished loading...")
         document.getElementById("loading_screen").hidden = true;
         document.getElementById("title_screen").hidden = false;
         document.getElementById("sound_button").hidden = false;
         document.getElementById("acorn_count").hidden = false;
+        document.getElementById("hint_button").hidden = false;
+        document.getElementById("clock").hidden = false;
         document.getElementById("golden_acorn_count").hidden = false;
         state["game_stage"] = "title_screen";
         return true;
@@ -370,7 +373,7 @@ var random_acorn_positions = [];
 for (var i = 0; i < oasis_acorns.length; ++i){
     random_acorn_positions.push(oasis_acorns[i]);
 }
-const target_acorn_total = 20;
+const target_acorn_total = 0; //3 * acorn_positions.length / 4;
 while (random_acorn_positions.length < target_acorn_total){
     var new_pos = acorn_positions[Math.floor(Math.random() * acorn_positions.length)];
     if (!random_acorn_positions.includes(new_pos)){
@@ -433,6 +436,8 @@ var state = {
     "map_editing": false,
     "game_stage": "loading",
     "start_time": 0,
+    "score": 0,
+    "frames_left": 30 * 60 * 2,
 }
 if (state["map_editing"]){
 	camera.position.x = 0;
@@ -694,6 +699,16 @@ function stay_still(){
 	state["time"] = 0;
 }
 
+function show_winscreen(){
+	console.log("you won!");
+    state["game_stage"] = "title_screen";
+    state["won"] = true;
+    document.getElementById('win_screen').hidden = false;
+    document.getElementById('score_div').hidden = false;
+    document.getElementById('score_paragraph').innerHTML = "You scored " + state["score"] + "!";
+    stay_still();
+}
+
 var frame_no = 0;
 const to_freefall_limit = squirrel_elevation * 3;
 const from_freefall_limit = squirrel_elevation * 1;
@@ -783,6 +798,7 @@ const animate = function () {
 	}
 	
 	//cosole.log(acorns);
+	const acorn_time = 30 * 3;
 	var acorn_count = 0;
 	for (var i = 0; i < acorns.length; ++i){
 	    if (acorns[i].visible){
@@ -790,6 +806,8 @@ const animate = function () {
 	        if (squirrel.position.distanceTo(acorns[i].position) < 4 * squirrel_elevation){
 	            acorns[i].visible = false;
 	            play_munch();
+	            state["score"] += 1;
+	            state["frames_left"] += acorn_time;
 	            document.getElementById("hint_button").innerHTML = "Hint";
 	        }
 	    }
@@ -813,6 +831,8 @@ const animate = function () {
 	        golden_count += 1;
 	        if (squirrel.position.distanceTo(golden_acorns[i].position) < 4 * squirrel_elevation){
 	            golden_acorns[i].visible = false;
+	            state["score"] += 10;
+	            state["frames_left"] += acorn_time * 10;
 	            play_munch();
 	        }
 	    }
@@ -820,20 +840,20 @@ const animate = function () {
 	}
 	
 	if (!state["won"] && state["game_stage"] == "playing"){
+	    state["frames_left"] -= 1;
 	    const date = new Date();
-	    document.getElementById('clock').innerHTML = (date.getTime() - state["start_time"]) / 1000 + "s";
+	    document.getElementById('clock').innerHTML = state["frames_left"] + " frames to go";
+	    if (state["frames_left"] == 0){
+	        show_winscreen();
+	    }
 	}
 	
 	if (!state["won"] && (acorn_count + golden_count == 0)){
-	    console.log("you won!");
-	    state["game_stage"] = "title_screen";
-	    state["won"] = true;
-	    document.getElementById('win_screen').hidden = false;
-	    document.getElementById('score_div').hidden = false;
-	    stay_still();
+	    // hopefully this condition isn't easily met...
+        show_winscreen();
 	}
-	document.getElementById('acorn_count').innerHTML= acorn_count;
-	document.getElementById('golden_acorn_count').innerHTML= golden_count;
+	document.getElementById('acorn_count').innerHTML= acorns.length - acorn_count;
+	document.getElementById('golden_acorn_count').innerHTML= golden_acorns.length - golden_count;
     
     if(falling()){
         if (((squirrel_up.x == 0) && (squirrel_up.y == -1)) && (squirrel_up.z == 0)){
