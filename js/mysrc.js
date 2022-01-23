@@ -431,6 +431,7 @@ var squirrel_target = new THREE.Vector3(0, 0, 0);
 var state = {
     "action": "freefall",
     "pace": 0,
+    "pose_time": 0,
     "time": 0,
     "velocity": new THREE.Vector3(0, 0, 0),
     "map_editing": false,
@@ -723,6 +724,20 @@ const animate = function () {
 		return;
 	}
 	
+	console.log(key_states);
+	if (key_states["foreward"]){
+	    foreward();
+	}
+	if (key_states["back"]){
+	    back();
+	}
+	if (key_states["left"]){
+	    left();
+	}
+	if (key_states["right"]){
+	    right();
+	}
+	
 	frame_no++;
 	const gaze_ff = squirrel_dir.clone();
 	const gaze_f = squirrel_dir.clone().sub(squirrel_up);
@@ -946,7 +961,8 @@ const animate = function () {
 
 	if (state["action"] == "walking"){
 		state["time"] += 1;
-	    set_walking_pose(frame_no * state["pace"]);
+		state["pose_time"] += state["pace"];
+	    set_walking_pose(state["pose_time"]);
 		squirrel_dir = target_f_point.clone().sub(target_b_point).normalize();
 		const left_right = target_l.point.clone().sub(target_r.point).normalize();
 		squirrel_up = squirrel_dir.clone().cross(left_right.clone().negate()).normalize();
@@ -1101,18 +1117,25 @@ function foreward(){
 	}
 	if (state["action"] == "walking"){
 		state["time"] = 0;
-		state["pace"] += 0.2;
+		state["pace"] += 0.1;
         state["pace"] = Math.min(state["pace"], max_pace);
 	}
 }
 
 function back(){
 	if (state["action"] == "walking"){
-		state["pace"] -= 0.2;
+		state["pace"] -= 0.1;
 	}
 	if (state["pace"] < 0.2){
 	    stay_still();
 	}
+}
+
+var key_states = {
+    "foreward": false,
+    "back": false,
+    "left":false,
+    "right": false,
 }
 
 function input_react(){
@@ -1143,16 +1166,18 @@ document.onkeydown = function(e) {
 	cam_orthogonal.cross(cam_direction);
     switch (e.keyCode) {
 		case 37: // right
-            right();
+            key_states["right"] = true;
 		break;
 		case 38: // foreward
-            foreward();
+		    console.log("foreward!!");
+            key_states["foreward"] = true;
+            console.log(key_states);
 		break;
 		case 39: // left
-            left();
+            key_states["left"] = true;
 		break;
 		case 40: // back
-		    back();
+		    key_states["back"] = true;
 		break;
 		case 32: //  space initiates jump
 		  if (gripping()){
@@ -1241,6 +1266,23 @@ document.onkeydown = function(e) {
 		angle = -angle;
 	}
 };
+
+window.onkeyup = function(e) {
+    switch (e.keyCode) {
+		case 37: // right
+            key_states["right"] = false;
+		break;
+		case 38: // foreward
+            key_states["foreward"] = false;
+		break;
+		case 39: // left
+            key_states["left"] = false;
+		break;
+		case 40: // back
+		    key_states["back"] = false;
+		break;
+    }
+}
 
 document.ontouchstart = function(e) {
     input_react();
