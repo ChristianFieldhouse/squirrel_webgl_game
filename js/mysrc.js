@@ -1039,6 +1039,7 @@ const animate = function () {
         title_cam_direction.normalize();
 		camera.position.sub(title_cam_direction.cross(new THREE.Vector3(0, 1, 0)).multiplyScalar(0.01));
 	    camera.lookAt(squirrel.position.x, squirrel.position.y, squirrel.position.z);
+	    cam_direction = camera.position.clone().sub(squirrel.position).normalize();
 	}else if (!state["map_editing"]){
 		raycaster.set(camera.position, new THREE.Vector3(0, -1, 0));
 		const intersects = raycaster.intersectObjects(scene.children, true);
@@ -1047,17 +1048,17 @@ const animate = function () {
 		    squirrel.position.y - camera.position.y,
 		    squirrel.position.z - camera.position.z
 	    );
-
-	    console.log(cam_direction);
+        console.log(intersects);
+	    //console.log(cam_direction);
 	    actual_cam_direction.normalize();
 	    var cam_orthogonal = new THREE.Vector3(0, 1, 0);
 	    cam_orthogonal.cross(cam_direction);
 	    const cam_eps = 0.05;
 		if (key_states["cam_left"]){
-		    cam_direction.sub(cam_orthogonal.clone().multiplyScalar(cam_eps));
+		    cam_direction.add(cam_orthogonal.clone().multiplyScalar(cam_eps));
 		}
 		if (key_states["cam_right"]){
-		    cam_direction.add(cam_orthogonal.clone().multiplyScalar(cam_eps));
+		    cam_direction.sub(cam_orthogonal.clone().multiplyScalar(cam_eps));
 		}
 		if (key_states["cam_up"]){
 		    cam_direction.y += cam_eps;
@@ -1066,11 +1067,18 @@ const animate = function () {
 		    cam_direction.y -= cam_eps;
 		}
 		if (intersects[0].distance < 0.1){
-			cam_direction.y -= 0.1 - intersects[0].distance;
+			cam_direction.y += 0.1 - intersects[0].distance;
+		}
+		if (intersects[0].point.y < -10){
+		    raycaster.set(camera.position, new THREE.Vector3(0, 1, 0));
+		    const intersects_up = raycaster.intersectObjects(scene.children, true);
+		    if (intersects_up[0].point.y < 20){
+			    cam_direction.y += 0.1;
+			}
 		}
 		cam_direction.normalize();
 		
-	    camera.position.lerp(squirrel.position.clone().sub(cam_direction.clone().multiplyScalar(cam_distance)), 0.2);
+	    camera.position.lerp(squirrel.position.clone().add(cam_direction.clone().multiplyScalar(cam_distance)), 0.2);
 	    camera.lookAt(squirrel.position.x, squirrel.position.y, squirrel.position.z);
 	}
 	
@@ -1106,7 +1114,7 @@ function start_walking(){
 	state["pace"] = 0.2;
 }
 
-const eps = 0.1;
+const eps = 0.2;
 const cameps = 0.1;
 const cameps_vertical = 0.1;
 const roteps = 0.01;
