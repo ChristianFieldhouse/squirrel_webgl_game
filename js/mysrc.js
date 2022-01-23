@@ -1048,7 +1048,7 @@ const animate = function () {
 		    squirrel.position.y - camera.position.y,
 		    squirrel.position.z - camera.position.z
 	    );
-        console.log(intersects);
+        //console.log(intersects);
 	    //console.log(cam_direction);
 	    actual_cam_direction.normalize();
 	    var cam_orthogonal = new THREE.Vector3(0, 1, 0);
