@@ -19,7 +19,7 @@ const loader = new THREE.GLTFLoader();
 
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(2*18.4349488, window.innerWidth / window.innerHeight, 0.5, 1000 );
+const camera = new THREE.PerspectiveCamera(2*18.4349488, window.innerWidth / window.innerHeight, 0.01, 1000 );
 const renderer = new THREE.WebGLRenderer();
 renderer.gammaOutput = true
 renderer.setSize( window.innerWidth, window.innerHeight );
@@ -456,6 +456,7 @@ var item_positions = [];
 const indicators = false;
 
 if (indicators){
+    console.log("indicators on");
     var indicatorf = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["pink"] } ) );
     var indicatorb = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["ligt_salmon"] } ) );
     var indicatorl = new THREE.Mesh( squirrel_geom, new THREE.MeshBasicMaterial( { color: colours["grey"] } ) );
@@ -757,21 +758,10 @@ const animate = function () {
 	const target_r = get_intersect(gaze_r);
 	
 	if (indicators){
-	    indicatorf.position.x = target_f.point.x;
-	    indicatorf.position.y = target_f.point.y;
-	    indicatorf.position.z = target_f.point.z;
-	    
-	    indicatorb.position.x = target_b.point.x;
-	    indicatorb.position.y = target_b.point.y;
-	    indicatorb.position.z = target_b.point.z;
-	    
-	    indicatorl.position.x = target_l.point.x;
-	    indicatorl.position.y = target_l.point.y;
-	    indicatorl.position.z = target_l.point.z;
-	    
-	    indicatorr.position.x = target_r.point.x;
-	    indicatorr.position.y = target_r.point.y;
-	    indicatorr.position.z = target_r.point.z;
+	    indicatorf.position.set(target_f.point.x, target_f.point.y, target_f.point.z);
+	    indicatorb.position.set(target_b.point.x, target_b.point.y, target_b.point.z);
+	    indicatorl.position.set(target_l.point.x, target_l.point.y, target_l.point.z);
+	    indicatorr.position.set(target_r.point.x, target_r.point.y, target_r.point.z);
 	}
 	
 	for (var i = 0; i < hoops.length; ++i){
@@ -1076,9 +1066,28 @@ const animate = function () {
 			    cam_direction.y += 0.1;
 			}
 		}
+		var actual_cam_distance = cam_distance;
 		cam_direction.normalize();
-		
-	    camera.position.lerp(squirrel.position.clone().add(cam_direction.clone().multiplyScalar(cam_distance)), 0.2);
+		//raycaster.setFromCamera( new THREE.Vector2(0, 0), camera );
+		raycaster.set(squirrel.position, camera.position.clone().sub(squirrel.position).normalize() );
+	    const intersect_squirrel = raycaster.intersectObjects(scene.children, true);
+		if (intersect_squirrel.length > 0){
+		    var idx = 0;
+		    while (intersect_squirrel[idx].object.name == "Sphere"){
+		        idx += 1;
+		    }
+		    var ipos = intersect_squirrel[idx].point;
+		    //indicatorb.position.set(ipos.x, ipos.y, ipos.z);
+		    var d = intersect_squirrel[idx].distance;
+		    if (
+		        (d < cam_distance) &&
+		        (d > squirrel_elevation * 4)
+		    ){
+		        //console.log("shortening distance!!!", intersect_squirrel[idx].distance);
+		        actual_cam_distance = d * 0.8;
+		    }
+		}
+	    camera.position.lerp(squirrel.position.clone().add(cam_direction.clone().multiplyScalar(actual_cam_distance)), 0.2);
 	    camera.lookAt(squirrel.position.x, squirrel.position.y, squirrel.position.z);
 	}
 	
@@ -1326,7 +1335,7 @@ function onDocumentMouseWheel( event ) {
 }
 
 // todo : sort out this vs. map_editing
-const click_to_add = false;
+const click_to_add = true;
 function onDocumentClick( event ) {
     if (click_to_add){
         console.log("click");
