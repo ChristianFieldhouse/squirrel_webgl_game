@@ -428,9 +428,10 @@ function get_intersect(gaze){
 	    }
 	}
 }
-var squirrel_dir = new THREE.Vector3(0, 0, 1);
-var squirrel_left = new THREE.Vector3(-1, 0, 0);
+const start_angle = Math.PI * 2 * Math.random();
+var squirrel_dir = new THREE.Vector3(Math.sin(start_angle), 0, Math.cos(start_angle));
 var squirrel_up = new THREE.Vector3(0, 1, 0);
+var squirrel_left = squirrel_up.clone().cross(squirrel_dir);
 var squirrel_target = new THREE.Vector3(0, 0, 0);
 
 var state = {
@@ -1335,7 +1336,7 @@ function onDocumentMouseWheel( event ) {
 }
 
 // todo : sort out this vs. map_editing
-const click_to_add = true;
+const click_to_add = false;
 function onDocumentClick( event ) {
     if (click_to_add){
         console.log("click");
