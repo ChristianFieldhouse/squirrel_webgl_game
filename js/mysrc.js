@@ -1400,21 +1400,70 @@ window.onkeyup = function(e) {
     }
 }
 
-document.ontouchstart = function(e) {
-    input_react();
-    if (e.touches[0].clientX > window.innerWidth/2){
-        left();
+function feel(touch, direction=true){
+	//document.getElementById("debug_p").innerHTML = JSON.stringify(key_states);
+	//document.getElementById("debug_p").innerHTML = direction;
+    if (touch.clientY > window.innerHeight/2){
+		var x = touch.clientX - window.innerWidth/2;
+		var y = touch.clientY - window.innerHeight * 3/4;
+		if (Math.abs(x) > Math.abs(y)){
+			if (x > 0){
+				key_states["left"] = direction;
+			}else{
+				key_states["right"] = direction;
+			}
+		}else{
+			if (y > 0){
+				key_states["back"] = direction;
+			}else{
+				key_states["foreward"] = direction;
+			}
+		}
     }
     else{
-        right();
-    }
-    if (e.touches[0].clientY < 3*window.innerHeight/4){
-        foreward();
-    }
-    else{
-        back();
+		var x = touch.clientX - window.innerWidth/2;
+		var y = touch.clientY - window.innerHeight * 1/4;
+		if (Math.abs(x) > Math.abs(y)){
+			if (x > 0){
+				key_states["cam_left"] = direction;
+			}else{
+				key_states["cam_right"] = direction;
+			}
+		}else{
+			if (y > 0){
+				key_states["cam_down"] = direction;
+			}else{
+				key_states["cam_up"] = direction;
+			}
+		}
     }
 }
+
+document.ontouchstart = function(e) {
+    input_react();
+	for (var i = 0; i < e.touches.length; ++i){
+		feel(e.touches[i], true);
+	}
+}
+document.ontouchend = function(e) {
+	//document.getElementById("debug_p").innerHTML = e.touches.length;
+	key_states = {
+		"foreward": false,
+		"back": false,
+		"left":false,
+		"right": false,
+		"cam_left": false,
+		"cam_right": false,
+		"cam_up": false,
+		"cam_down": false,
+	}
+}
+document.ontouchmove = function(e) {
+	for (var i = 0; i < e.touches.length; ++i){
+		feel(e.touches[i], true);
+	}
+}
+
 
 function onDocumentMouseWheel( event ) {
 
