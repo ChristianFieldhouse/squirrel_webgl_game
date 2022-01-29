@@ -764,9 +764,8 @@ const velocity_glitch_limit = from_freefall_limit * 1;
 const pace_glitch_limit = 0.5 * velocity_glitch_limit / frame_pace_multiplier;
 
 const animate = function () {
-	requestAnimationFrame( animate );
-	
 	if (!everything_loaded()){
+		requestAnimationFrame( animate );
 		return;
 	}
 	
@@ -801,19 +800,66 @@ const animate = function () {
 	//console.log(map_mesh);
 
 	if (indicators){
-	    indicatorf.position.set(target_f.point.x, target_f.point.y, target_f.point.z);
-	    indicatorb.position.set(target_b.point.x, target_b.point.y, target_b.point.z);
-	    indicatorl.position.set(target_l.point.x, target_l.point.y, target_l.point.z);
-	    indicatorr.position.set(target_r.point.x, target_r.point.y, target_r.point.z);
+		if (target_f){
+			indicatorf.position.set(target_f.point.x, target_f.point.y, target_f.point.z);
+		}
+	    if (target_b){
+			indicatorb.position.set(target_b.point.x, target_b.point.y, target_b.point.z);
+		}
+		if (target_l){
+			indicatorl.position.set(target_l.point.x, target_l.point.y, target_l.point.z);
+		}
+		if (target_r){
+			indicatorr.position.set(target_r.point.x, target_r.point.y, target_r.point.z);
+		}
 	}
 	
 	for (var i = 0; i < hoops.length; ++i){
 	    hoops[i].rotation.y += 0.01;
 	}
+
+	if(falling()){
+		console.log("falling");
+        if (((squirrel_up.x == 0) && (squirrel_up.y == -1)) && (squirrel_up.z == 0)){
+            squirrel_up = new THREE.Vector3(0, 1, 0);
+        }
+        else{
+    	    squirrel_up.lerp(new THREE.Vector3(0, 1, 0), 0.1).normalize();
+    	}
+		squirrel_dir = squirrel_up.clone().cross(squirrel_left).normalize();
+		squirrel_left = squirrel_up.clone().cross(squirrel_dir).normalize().negate();
+	    if (((target_f && target_f.distance < from_freefall_limit) ||
+            (target_b && target_b.distance < from_freefall_limit)) ||
+            (((target_l && target_l.distance < from_freefall_limit) ||
+            (target_r && target_r.distance < from_freefall_limit)) ||
+            (target_ff && target_ff.distance < from_freefall_limit))
+        ){
+            var closest_intersect = target_f;
+			var ps = [target_ff, target_b, target_l, target_r];
+			for (var i = 0; i < ps.length; ++i){
+				if (!closest_intersect || (ps[i] && ps[i].distance < closest_intersect.distance)){
+					closest_intersect = ps[i];
+				}
+			}
+            if(state["velocity"].dot(squirrel.position.clone().sub(closest_intersect.point)) < 0){
+                state["action"] = "walking";
+                state["time"] = 0;
+            }
+        }
+        state["velocity"].add(new THREE.Vector3(0, -0.001, 0));
+		const terminal_velocity = velocity_glitch_limit;
+		if (state["velocity"].length() > terminal_velocity){
+			state["velocity"].normalize().multiplyScalar(terminal_velocity);
+		}
+		if (falling()){
+	        squirrel.position.add(state["velocity"]);
+	    }
+    }
 	
 	var target_f_point = null; //target_f.point;
 	var target_b_point = null; //target_b.point;
 	if (gripping()){
+		console.log("not falling");
 		var eps = 0.2;
 	    if (
 	        (target_f == null) ||
@@ -835,9 +881,10 @@ const animate = function () {
 	    ){
             target_b_point = squirrel.position.clone().add(
                 squirrel_dir.clone().negate().sub(
-                    squirrel_up.clone().multiplyScalar(1 - eps)
+                    squirrel_up.clone().multiplyScalar(1 + eps)
                 ).multiplyScalar(squirrel_elevation)
             )
+			console.log("trying to backwards correct...");
 	    }
 	    else{
 	        target_b_point = target_b.point;
@@ -877,7 +924,7 @@ const animate = function () {
                 play_munch();
                 state["score"] += 1;
                 state["frames_left"] += acorn_time;
-                document.getElementById("hint_button").innerHTML = "Hint";
+                //document.getElementById("hint_button").innerHTML = "Hint";
             }
         }
     }
@@ -930,49 +977,6 @@ const animate = function () {
 	    // hopefully this condition isn't easily met...
         show_winscreen();
 	}
-    
-    if(falling()){
-        if (((squirrel_up.x == 0) && (squirrel_up.y == -1)) && (squirrel_up.z == 0)){
-            squirrel_up = new THREE.Vector3(0, 1, 0);
-        }
-        else{
-    	    squirrel_up.lerp(new THREE.Vector3(0, 1, 0), 0.1).normalize();
-    	}
-		squirrel_dir = squirrel_up.clone().cross(squirrel_left).normalize();
-		squirrel_left = squirrel_up.clone().cross(squirrel_dir).normalize().negate();
-	    if (((target_f && target_f.distance < from_freefall_limit) ||
-            (target_b && target_b.distance < from_freefall_limit)) ||
-            (((target_l && target_l.distance < from_freefall_limit) ||
-            (target_r && target_r.distance < from_freefall_limit)) ||
-            (target_ff && target_ff.distance < from_freefall_limit))
-        ){
-            var closest_intersect = target_f;
-            if (target_ff && target_ff.distance < closest_intersect.distance){
-                closest_intersect = target_ff;
-            }
-            if (target_b && target_b.distance < closest_intersect.distance){
-                closest_intersect = target_b;
-            }
-            if (target_l && target_l.distance < closest_intersect.distance){
-                closest_intersect = target_l;
-            }
-            if (target_r && target_r.distance < closest_intersect.distance){
-                closest_intersect = target_r;
-            }
-            if(state["velocity"].dot(squirrel.position.clone().sub(closest_intersect.point)) < 0){
-                state["action"] = "walking";
-                state["time"] = 0;
-            }
-        }
-        state["velocity"].add(new THREE.Vector3(0, -0.001, 0));
-		const terminal_velocity = velocity_glitch_limit;
-		if (state["velocity"].length() > terminal_velocity){
-			state["velocity"].normalize().multiplyScalar(terminal_velocity);
-		}
-		if (falling()){
-	        squirrel.position.add(state["velocity"]);
-	    }
-    }
 	
 	if (still()){
 		state["time"] += 1;
@@ -1024,7 +1028,7 @@ const animate = function () {
 		}
 		squirrel_up = squirrel_dir.clone().cross(left_right.clone().negate()).normalize();
 		squirrel_left = squirrel_up.clone().cross(squirrel_dir.clone()).normalize().negate();
-		var new_pos = target_b.point.clone().lerp(target_f_point, 0.5).add(
+		var new_pos = target_b_point.clone().lerp(target_f_point, 0.5).add(
 		    squirrel_up.clone().multiplyScalar(squirrel_elevation)
 		);
 		if (new_pos.distanceTo(squirrel.position) > squirrel_elevation){
@@ -1134,7 +1138,6 @@ const animate = function () {
 			else if (intersects_down[0].distance < 0.1){
 				cam_direction.y += 0.1 - intersects_down[0].distance;
 			}
-			console.log("doing smart cam stuff....");
 			cam_direction.normalize();
 			//raycaster.setFromCamera( new THREE.Vector2(0, 0), camera );
 			raycaster.set(squirrel.position, camera.position.clone().sub(squirrel.position).normalize() );
@@ -1151,29 +1154,29 @@ const animate = function () {
 					(d < cam_distance) &&
 					(d > squirrel_elevation * 4)
 				){
-					console.log("shortening distance!!!", d);
+					//console.log("shortening distance!!!", d);
 					actual_cam_distance = d * 0.8;
 				}
 			}
 		}
-	    camera.position.lerp(squirrel.position.clone().add(cam_direction.clone().multiplyScalar(actual_cam_distance)), 0.2);
+	    camera.position.lerp(squirrel.position.clone().add(cam_direction.clone().multiplyScalar(actual_cam_distance)), 0.3);
 	    camera.lookAt(squirrel.position.x, squirrel.position.y, squirrel.position.z);
 	}
 
 	var now = (new Date()).getTime();
-	var spare_time = 33.333333 - (now - state["last_frame_time"]);
+	const target_frame_time = 1000/27;
+	var spare_time = target_frame_time - (now - state["last_frame_time"]);
 	if (spare_time > 5){
 		state["smart_cam"] = 1;
 	}
 	else if (spare_time < -20){
 		state["smart_cam"] = 0;
 	}
-
-	console.log(state["smart_cam"]);
-	state["last_frame_time"] = now;
 	
 	setTimeout(() => {
 		renderer.render( scene, camera );
+		state["last_frame_time"] = (new Date()).getTime();
+		animate();
 	}, Math.max(0, spare_time));
 };
 
