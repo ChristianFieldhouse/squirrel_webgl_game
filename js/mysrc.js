@@ -440,8 +440,9 @@ const line = new THREE.Line( line_geometry, line_material );
 var raycaster = new THREE.Raycaster();
 var intersects;
 function get_intersect(gaze){
+	//return null;
 	raycaster.set(squirrel.position, gaze);
-	//raycaster.far = squirrel_elevation * 5;
+	raycaster.far = squirrel_elevation * 5;
 	var close_small_trees = [];
 	const tree_radius = 4;
 	for (var i = 0; i < small_trees.length; ++i){
@@ -454,6 +455,7 @@ function get_intersect(gaze){
 		map_mesh.children.concat(close_small_trees).concat(big_tree_mesh.children),
 		true
 	);
+	raycaster.far = Infinity;
 	if (intersects.length == 0){
 		return;
 	}
@@ -480,7 +482,8 @@ var state = {
     "start_time": 0,
     "score": 0,
     "frames_left": 1000 * 1,
-	"last_frame_time": (new Date()).getTime()
+	"last_frame_time": (new Date()).getTime(),
+	"smart_cam": 0
 }
 if (state["map_editing"]){
 	camera.position.x = 0;
@@ -1091,13 +1094,12 @@ const animate = function () {
 	    camera.lookAt(squirrel.position.x, squirrel.position.y, squirrel.position.z);
 	    cam_direction = camera.position.clone().sub(squirrel.position).normalize();
 	}else if (!state["map_editing"]){
-		raycaster.set(camera.position, new THREE.Vector3(0, -1, 0));
-		const intersects_down = raycaster.intersectObjects(map_mesh.children, true);
 		var actual_cam_direction = new THREE.Vector3(
 		    squirrel.position.x - camera.position.x,
 		    squirrel.position.y - camera.position.y,
 		    squirrel.position.z - camera.position.z
 	    );
+		var actual_cam_distance = cam_distance;
         //console.log(intersects);
 	    //console.log(cam_direction);
 	    actual_cam_direction.normalize();
@@ -1116,52 +1118,63 @@ const animate = function () {
 		if (key_states["cam_down"]){
 		    cam_direction.y -= cam_eps;
 		}
-		// if under the ground, find the surface and go up to it
-		if (!intersects_down[0]){
-			raycaster.set(camera.position, new THREE.Vector3(0, 1, 0));
-			const intersects_up = raycaster.intersectObjects(map_mesh.children, true);
-			if (intersects_up[0]){
-				cam_direction.y += 0.1;
-			}
-		}
-		// if close to the groud, float up
-		else if (intersects_down[0].distance < 0.1){
-			cam_direction.y += 0.1 - intersects_down[0].distance;
-		}
 
-		var actual_cam_distance = cam_distance;
-		cam_direction.normalize();
-		//raycaster.setFromCamera( new THREE.Vector2(0, 0), camera );
-		raycaster.set(squirrel.position, camera.position.clone().sub(squirrel.position).normalize() );
-	    const intersect_squirrel = raycaster.intersectObjects(scene.children, true);
-		if (intersect_squirrel.length > 0){
-		    var idx = 0;
-		    while (intersect_squirrel[idx].object.name == "Sphere"){
-		        idx += 1;
-		    }
-		    var ipos = intersect_squirrel[idx].point;
-		    //indicatorb.position.set(ipos.x, ipos.y, ipos.z);
-		    var d = intersect_squirrel[idx].distance;
-		    if (
-		        (d < cam_distance) &&
-		        (d > squirrel_elevation * 4)
-		    ){
-		        //console.log("shortening distance!!!", intersect_squirrel[idx].distance);
-		        actual_cam_distance = d * 0.8;
-		    }
+		if (state["smart_cam"]){
+			raycaster.set(camera.position, new THREE.Vector3(0, -1, 0));
+			const intersects_down = raycaster.intersectObjects(map_mesh.children, true);
+			// if under the ground, find the surface and go up to it
+			if (!intersects_down[0]){
+				raycaster.set(camera.position, new THREE.Vector3(0, 1, 0));
+				const intersects_up = raycaster.intersectObjects(map_mesh.children, true);
+				if (intersects_up[0]){
+					cam_direction.y += 0.1;
+				}
+			}
+			// if close to the groud, float up
+			else if (intersects_down[0].distance < 0.1){
+				cam_direction.y += 0.1 - intersects_down[0].distance;
+			}
+			console.log("doing smart cam stuff....");
+			cam_direction.normalize();
+			//raycaster.setFromCamera( new THREE.Vector2(0, 0), camera );
+			raycaster.set(squirrel.position, camera.position.clone().sub(squirrel.position).normalize() );
+			const intersect_squirrel = raycaster.intersectObjects(scene.children, true);
+			if (intersect_squirrel.length > 0){
+				var idx = 0;
+				while ((idx < intersect_squirrel.length - 1) && intersect_squirrel[idx].object.name == "Sphere"){
+					idx += 1;
+				}
+				var ipos = intersect_squirrel[idx].point;
+				//indicatorb.position.set(ipos.x, ipos.y, ipos.z);
+				var d = intersect_squirrel[idx].distance;
+				if (
+					(d < cam_distance) &&
+					(d > squirrel_elevation * 4)
+				){
+					console.log("shortening distance!!!", d);
+					actual_cam_distance = d * 0.8;
+				}
+			}
 		}
 	    camera.position.lerp(squirrel.position.clone().add(cam_direction.clone().multiplyScalar(actual_cam_distance)), 0.2);
 	    camera.lookAt(squirrel.position.x, squirrel.position.y, squirrel.position.z);
 	}
 
 	var now = (new Date()).getTime();
-	while((now - state["last_frame_time"]) < 33.333333){
-		now = (new Date()).getTime();
-		console.log("waiting");
+	var spare_time = 33.333333 - (now - state["last_frame_time"]);
+	if (spare_time > 5){
+		state["smart_cam"] = 1;
 	}
+	else if (spare_time < -20){
+		state["smart_cam"] = 0;
+	}
+
+	console.log(state["smart_cam"]);
 	state["last_frame_time"] = now;
 	
-	renderer.render( scene, camera );
+	setTimeout(() => {
+		renderer.render( scene, camera );
+	}, Math.max(0, spare_time));
 };
 
 var music_playing = false;
