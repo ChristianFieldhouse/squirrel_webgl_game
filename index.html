@@ -28,9 +28,23 @@
               vertical-align: middle;
               position: absolute;
             }
+            
+            .no_selection {
+                -webkit-touch-callout:none;
+                -webkit-user-select:none;
+                -khtml-user-select:none;
+                -moz-user-select:none;
+                -ms-user-select:none;
+                user-select:none;
+                -webkit-tap-highlight-color:rgba(0,0,0,0);
+            }
+            
+            .arrows {
+                position: absolute;
+            }
 		</style>
 	</head>
-	<body>
+	<body class="no_selection">
 		<!--script src="node_modules/three/build/three.js"></script-->
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r127/three.js"></script>
 		<script src="https://unpkg.com/three@0.127.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -84,9 +98,41 @@
             
             </p>
         </div>
+        <div class="arrows" style="
+            right:0; bottom:0;
+            border-left: 100px solid transparent;
+            border-right: 100px solid transparent;
+            border-bottom: 100px solid black;
+            border-top: 100px solid black;
+            opacity: 0.2;
+        " id="move_arrows">
+        </div>
+        <div class="arrows" style="
+            left:0; bottom:0;
+            border-left: 100px solid transparent;
+            border-right: 100px solid transparent;
+            border-bottom: 100px solid black;
+            border-top: 100px solid black;
+            opacity: 0.2;
+        " id="cam_arrows">
+        </div>
         
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
         <script>
+            function reset_touch_feedback(){
+                document.getElementById("move_arrows").style.borderLeft = window.innerWidth/4 + "px solid transparent";
+                document.getElementById("move_arrows").style.borderRight = window.innerWidth/4 + "px solid transparent";
+                document.getElementById("move_arrows").style.borderTop = window.innerHeight/4 + "px solid transparent";
+                document.getElementById("move_arrows").style.borderBottom = window.innerHeight/4 + "px solid transparent";
+                
+                document.getElementById("cam_arrows").style.borderLeft = window.innerWidth/4 + "px solid transparent";
+                document.getElementById("cam_arrows").style.borderRight = window.innerWidth/4 + "px solid transparent";
+                document.getElementById("cam_arrows").style.borderTop = window.innerHeight/4 + "px solid transparent";
+                document.getElementById("cam_arrows").style.borderBottom = window.innerHeight/4 + "px solid transparent";
+            }
+            reset_touch_feedback();
+
+            console.log("sizes right??", window.innerWidth / 4);
             function fill_scoreboard(e) {
                 var s = "";
                 for (var i = 0; i < e.length; ++i){

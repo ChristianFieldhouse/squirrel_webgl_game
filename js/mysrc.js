@@ -1254,6 +1254,16 @@ function back(){
 	}
 }
 
+function maybe_jump(){
+	if (gripping()){
+		state["action"] = "jumping";
+		state["time"] = 0;
+		state["velocity"] = squirrel_dir.clone().add(
+			squirrel_up.multiplyScalar(0.5)
+		).multiplyScalar(0.02);
+	}
+}
+
 var key_states = {
     "foreward": false,
     "back": false,
@@ -1263,6 +1273,20 @@ var key_states = {
     "cam_right": false,
     "cam_up": false,
     "cam_down": false,
+}
+
+function reset_move_keys(){
+	key_states["foreward"] = false;
+	key_states["left"] = false;
+	key_states["right"] = false;
+	key_states["back"] = false;
+}
+
+function reset_cam_keys(){
+	key_states["cam_up"] = false;
+	key_states["cam_left"] = false;
+	key_states["cam_right"] = false;
+	key_states["cam_down"] = false;
 }
 
 function input_react(){
@@ -1296,9 +1320,7 @@ document.onkeydown = function(e) {
             key_states["right"] = true;
 		break;
 		case 38: // foreward
-		    console.log("foreward!!");
             key_states["foreward"] = true;
-            console.log(key_states);
 		break;
 		case 39: // left
             key_states["left"] = true;
@@ -1307,28 +1329,16 @@ document.onkeydown = function(e) {
 		    key_states["back"] = true;
 		break;
 		case 32: //  space initiates jump
-		  if (gripping()){
-			  state["action"] = "jumping";
-			  state["time"] = 0;
-			  state["velocity"] = squirrel_dir.clone().add(
-				  squirrel_up.multiplyScalar(0.5)
-			  ).multiplyScalar(0.02);
-		  }
+			maybe_jump();
 		break;
-		case "U".charCodeAt(0): //  u makes squirrel go up
-		squirrel.position.y = squirrel.position.y + 1;
-		break;
+		//case "U".charCodeAt(0): //  u makes squirrel go up
+		//	squirrel.position.y = squirrel.position.y + 1;
+		//break;
 		case "D".charCodeAt(0): // a key, camera left
 		    key_states["cam_left"] = true;
 		break;
 		case "A".charCodeAt(0):
 			key_states["cam_right"] = true;
-		break;
-		case "C".charCodeAt(0):
-		  camera.position.add(new THREE.Vector3(cameps, 0, 0));
-		break;
-		case "Z".charCodeAt(0):
-		  camera.position.add(new THREE.Vector3(-cameps, 0, 0));
 		break;
 		case "S".charCodeAt(0): // s key, camera down
 			key_states["cam_down"] = true;
@@ -1336,26 +1346,32 @@ document.onkeydown = function(e) {
 		case "W".charCodeAt(0): // w key, camera up
 			key_states["cam_up"] = true;
 		break;
-		case "E".charCodeAt(0): // e key, up
-		  camera.position.add(new THREE.Vector3(0, cameps, 0));
-		break;
-		case "Q".charCodeAt(0): // q key, camera down
-		  camera.position.sub(new THREE.Vector3(0, cameps, 0));
-		break;
-		case "R".charCodeAt(0): // e key, up
-		  camera.rotation.x += roteps;
-		break;
-		case "F".charCodeAt(0): // q key, camera down
-		  camera.rotation.x -= roteps;
-		break;
-		case "L".charCodeAt(0): // q key, camera down
-			if (state["action"] == "walking"){
-				state["action"] = "sitting";
-			}
-			else if (state["action"] == "sitting"){
-				state["action"] = "walking";
-			}
-		break;
+		//case "C".charCodeAt(0):
+		//  camera.position.add(new THREE.Vector3(cameps, 0, 0));
+		//break;
+		//case "Z".charCodeAt(0):
+		//  camera.position.add(new THREE.Vector3(-cameps, 0, 0));
+		//break;
+		//case "E".charCodeAt(0): // e key, up
+		//  camera.position.add(new THREE.Vector3(0, cameps, 0));
+		//break;
+		//case "Q".charCodeAt(0): // q key, camera down
+		//  camera.position.sub(new THREE.Vector3(0, cameps, 0));
+		//break;
+		//case "R".charCodeAt(0): // e key, up
+		//  camera.rotation.x += roteps;
+		//break;
+		//case "F".charCodeAt(0): // q key, camera down
+		//  camera.rotation.x -= roteps;
+		//break;
+		//case "L".charCodeAt(0): // q key, camera down
+		//	if (state["action"] == "walking"){
+		//		state["action"] = "sitting";
+		//	}
+		//	else if (state["action"] == "sitting"){
+		//		state["action"] = "walking";
+		//	}
+		//break;
     }
     var cam_direction = new THREE.Vector3(
 		squirrel.position.x - camera.position.x,
@@ -1404,39 +1420,53 @@ function feel(touch, direction=true){
 	//document.getElementById("debug_p").innerHTML = JSON.stringify(key_states);
 	//document.getElementById("debug_p").innerHTML = direction;
     if (touch.clientY > window.innerHeight/2){
-		var x = touch.clientX - window.innerWidth/2;
-		var y = touch.clientY - window.innerHeight * 3/4;
-		if (Math.abs(x) > Math.abs(y)){
-			if (x > 0){
-				key_states["left"] = direction;
+		if (touch.clientX > window.innerWidth/2){
+			var x = touch.clientX - window.innerWidth * 3/4;
+			var y = touch.clientY - window.innerHeight * 3/4;
+			reset_move_keys();
+			if (Math.abs(x) > Math.abs(y)){
+				if (x > 0){
+					key_states["left"] = direction;
+					document.getElementById("move_arrows").style.borderRight = window.innerWidth/4 + "px solid black";
+				}else{
+					key_states["right"] = direction;
+					document.getElementById("move_arrows").style.borderLeft = window.innerWidth/4 + "px solid black";
+				}
 			}else{
-				key_states["right"] = direction;
-			}
-		}else{
-			if (y > 0){
-				key_states["back"] = direction;
-			}else{
-				key_states["foreward"] = direction;
-			}
-		}
-    }
-    else{
-		var x = touch.clientX - window.innerWidth/2;
-		var y = touch.clientY - window.innerHeight * 1/4;
-		if (Math.abs(x) > Math.abs(y)){
-			if (x > 0){
-				key_states["cam_left"] = direction;
-			}else{
-				key_states["cam_right"] = direction;
-			}
-		}else{
-			if (y > 0){
-				key_states["cam_down"] = direction;
-			}else{
-				key_states["cam_up"] = direction;
+				if (y > 0){
+					key_states["back"] = direction;
+					document.getElementById("move_arrows").style.borderBottom = window.innerHeight/4 + "px solid black";
+				}else{
+					key_states["foreward"] = direction;
+					document.getElementById("move_arrows").style.borderTop = window.innerHeight/4 + "px solid black";
+				}
 			}
 		}
-    }
+		else{
+			reset_cam_keys();
+			var x = touch.clientX - window.innerWidth/4;
+			var y = touch.clientY - window.innerHeight * 3/4;
+			if (Math.abs(x) > Math.abs(y)){
+				if (x > 0){
+					key_states["cam_left"] = direction;
+					document.getElementById("cam_arrows").style.borderRight = window.innerWidth/4 + "px solid black";
+				}else{
+					key_states["cam_right"] = direction;
+					document.getElementById("cam_arrows").style.borderLeft = window.innerWidth/4 + "px solid black";
+				}
+			}else{
+				if (y > 0){
+					key_states["cam_down"] = direction;
+					document.getElementById("cam_arrows").style.borderBottom = window.innerHeight/4 + "px solid black";
+				}else{
+					key_states["cam_up"] = direction;
+					document.getElementById("cam_arrows").style.borderTop = window.innerHeight/4 + "px solid black";
+				}
+			}
+		}
+    }else{
+		maybe_jump();
+	}
 }
 
 document.ontouchstart = function(e) {
@@ -1457,6 +1487,7 @@ document.ontouchend = function(e) {
 		"cam_up": false,
 		"cam_down": false,
 	}
+	reset_touch_feedback();
 }
 document.ontouchmove = function(e) {
 	for (var i = 0; i < e.touches.length; ++i){
@@ -1496,7 +1527,6 @@ function onWindowResize(){
 
     renderer.setSize( window.innerWidth, window.innerHeight );
 }
-
 
 document.addEventListener( 'mousewheel', onDocumentMouseWheel, false );
 document.addEventListener( 'click', onDocumentClick, false );
