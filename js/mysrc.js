@@ -754,6 +754,7 @@ function show_winscreen(){
     document.getElementById('score_div').hidden = false;
     document.getElementById('score_paragraph').innerHTML = "You scored " + state["score"] + "!";
     stay_still();
+	aw_nuts.play();
 }
 
 var frame_no = 0;
@@ -780,6 +781,10 @@ const animate = function () {
 	}
 	if (key_states["right"]){
 	    right();
+	}
+
+	if (Math.random() < 1/1000){
+		squeaks.play();
 	}
 	
 	frame_no++;
@@ -949,7 +954,7 @@ const animate = function () {
                 golden_acorns[i].visible = false;
                 state["score"] += 10;
                 state["frames_left"] += acorn_time * 10;
-                play_munch();
+                wahoo.play();
             }
         }
 
@@ -1181,9 +1186,14 @@ const animate = function () {
 };
 
 var music_playing = false;
-var audio = new Audio('sounds/squirrel song.mp3');
-var munch_audio_katie = new Audio('sounds/munch_katie.mp3');
-var munch_audio_christian = new Audio('sounds/munch_christian.mp3');
+const audio = new Audio('sounds/squirrel song.mp3');
+const munch_audio_katie = new Audio('sounds/munch_katie.mp3');
+const munch_audio_christian = new Audio('sounds/munch_christian.mp3');
+const wahoo = new Audio('sounds/wahoo.mp3');
+const aw_nuts = new Audio('sounds/aw_nuts.mp3');
+const squeaks = new Audio('sounds/squeaks.mp3');
+const jump_katie = new Audio('sounds/jump_katie.mp3');
+const jump_christian = new Audio('sounds/jump_christian.mp3');
 var local_sounds = [
     [new THREE.Vector3(-64, 0, 65), 15, new Audio('sounds/ufo_sound.mp3')],
     [new THREE.Vector3(15, 0, -59), 5, new Audio('sounds/fire_sound.mp3')],
@@ -1200,6 +1210,14 @@ function play_munch(){
         munch_audio_christian.play();
     }else{
         munch_audio_katie.play();
+    }
+}
+
+function play_jump(){
+    if (Math.random() < 0.5){
+        jump_christian.play();
+    }else{
+        jump_katie.play();
     }
 }
 
@@ -1256,6 +1274,7 @@ function back(){
 
 function maybe_jump(){
 	if (gripping()){
+		play_jump();
 		state["action"] = "jumping";
 		state["time"] = 0;
 		state["velocity"] = squirrel_dir.clone().add(
