@@ -1016,7 +1016,7 @@ const animate = function () {
 	    set_walking_pose(frame_no * 0.2);
 	    squirrel_dir.lerp(target_direction, 0.1).normalize();
 		squirrel_left = squirrel_up.clone().cross(squirrel_dir.clone()).normalize().negate();
-		if (state["time"] > 30){
+		if (state["time"] > 5){
 		    stay_still();
 		}
 		
@@ -1207,9 +1207,9 @@ function pause_music(){
 }
 function play_munch(){
     if (Math.random() < 0.5){
-        munch_audio_christian.play();
+        munch_audio_christian.cloneNode().play();
     }else{
-        munch_audio_katie.play();
+        munch_audio_katie.cloneNode().play();
     }
 }
 
